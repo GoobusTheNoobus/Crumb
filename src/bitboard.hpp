@@ -30,4 +30,21 @@ namespace crumb
     {
         return square_mask(sq) & bb;
     }
+
+    constexpr int trailing_zero(u64 bb) 
+    {
+        return std::__countr_zero(bb);
+    }
+
+    constexpr int popcount(u64 bb)
+    {
+        return std::__popcount(bb);
+    }
+
+    inline int pop_lsb(u64& bb)
+    {
+        int tz = trailing_zero(bb);
+        bb &= bb - 1;
+        return tz;
+    }
 }

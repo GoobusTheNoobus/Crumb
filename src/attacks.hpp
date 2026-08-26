@@ -16,23 +16,17 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <cstdlib>
-#include <iostream>
-#include "attacks.hpp"
-#include "board.hpp"
+#pragma once
+#include "core.hpp"
 
-constexpr const char *ENGINE_NAME = "Crumb";
-constexpr const char *ENGINE_VERSION = "0.0.1";
-
-using namespace crumb;
-
-int main(void)
+namespace crumb::attacks
 {
-    std::cout << ENGINE_NAME << ' ' << ENGINE_VERSION << std::endl;
-    attacks::load_attacks();
+    void load_attacks();
 
-    Board board;
-    std::cout << board << std::endl;
-    
-    return EXIT_SUCCESS;
+    u64 get_pawn_attacks(Square sq, Color);
+    u64 get_knight_attacks(Square sq);
+    u64 get_king_attacks(Square sq);
+
+    u64 get_bishop_attacks(Square sq, u64 blockers);
+    u64 get_rook_attacks(Square sq, u64 blockers);
 }

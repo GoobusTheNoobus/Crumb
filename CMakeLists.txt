@@ -8,6 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_executable(crumb
     src/main.cpp
     src/board.cpp
+    src/attacks.cpp
 )
 
 target_include_directories(crumb PRIVATE src)
