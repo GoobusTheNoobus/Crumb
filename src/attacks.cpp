@@ -22,6 +22,8 @@
 
 namespace crumb::attacks
 {
+    namespace {
+
     constexpr int BISHOP_TABLE_SIZE = 5248, ROOK_TABLE_SIZE = 102400;
 
     u64 pawn_attacks[COLOR_NB][BOARD_SIZE];
@@ -343,6 +345,8 @@ namespace crumb::attacks
         }
 
         return blocker;
+    }
+
     }
 
     void load_attacks()

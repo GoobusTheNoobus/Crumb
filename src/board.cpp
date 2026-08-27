@@ -17,10 +17,12 @@
 */
 
 #include "board.hpp"
+#include "attacks.hpp"
 #include "bitboard.hpp"
 #include "core.hpp"
 #include <cctype>
 #include <cstring>
+#include <iostream>
 #include <sstream>
 
 namespace crumb 
@@ -73,6 +75,7 @@ namespace crumb
         int rank = 7, file = 0;
         while (iss >> token && part <= FEN_PART_HALFMOVE)
         {
+            // std::cout << token << std::endl;
             switch (part)
             {
                 case FEN_PART_BOARD:
@@ -88,17 +91,22 @@ namespace crumb
                         if (c == '/')
                         {
                             file = 0; 
-                            ++rank;
+                            --rank;
                             continue;
                         }
 
-                        ++file;
                         Piece p = char_to_piece(c);
+                        // std::cout << (int)p << std::endl;
+
                         Square sq = make_square(rank, file);
 
                         piece_bb[(int)type_of(p)] |= square_mask(sq);
                         color_bb[(int)color_of(p)] |= square_mask(sq);
+
+                        ++file;
                     }
+
+                    occ = color_bb[0] | color_bb[1];
 
                     break;
                 }
@@ -144,6 +152,49 @@ namespace crumb
                 default:
                     break;
             }
+
+            ++part;
         }
+    }
+
+    bool Board::is_attacked(Square square, Color by) const
+    {
+        u64 our_pieces = color_bb[(int)by];
+
+        u64 pawns = piece_bb[(int)PieceType::PAWN] & our_pieces;
+        if (pawns & attacks::get_pawn_attacks(square, opposite(by)))
+            return true;
+
+        u64 knights = piece_bb[(int)PieceType::KNIGHT] & our_pieces;
+        if (knights & attacks::get_knight_attacks(square))
+            return true;
+
+        u64 king = piece_bb[(int)PieceType::KING] & our_pieces;
+        if (king & attacks::get_king_attacks(square))
+            return true;
+
+        u64 bishops = piece_bb[(int)PieceType::BISHOP] & our_pieces;
+        u64 queens = piece_bb[(int)PieceType::QUEEN] & our_pieces;
+
+        if ((bishops | queens) & attacks::get_bishop_attacks(square, occ))
+            return true;
+
+        u64 rooks = piece_bb[(int)PieceType::KING] & our_pieces;
+
+        if ((rooks | queens) & attacks::get_rook_attacks(square, occ))
+            return true;
+
+        return false;
+    }
+
+    bool Board::is_in_check(Color color) const
+    {
+        Square king_square = (Square)trailing_zero(piece_bb[(int)PieceType::KING] | color_bb[(int)color]);
+        return is_attacked(king_square, opposite(color));
+    }
+
+    bool Board::is_in_check() const
+    {
+        return is_in_check(side_to_move);
     }
 }

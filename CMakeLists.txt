@@ -6,9 +6,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_executable(crumb
-    src/main.cpp
-    src/board.cpp
     src/attacks.cpp
+    src/board.cpp
+    src/main.cpp
+    src/movegen.cpp 
 )
 
 target_include_directories(crumb PRIVATE src)

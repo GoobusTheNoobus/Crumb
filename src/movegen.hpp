@@ -16,28 +16,36 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <cstdlib>
-#include <iostream>
-#include "attacks.hpp"
+#pragma once
+
 #include "board.hpp"
-#include "movelist.hpp"
+#include "core.hpp"
+#include "move.hpp"
 
-constexpr const char *ENGINE_NAME = "Crumb";
-constexpr const char *ENGINE_VERSION = "0.0.1";
-
-using namespace crumb;
-
-int main(void)
+namespace crumb
 {
-    std::cout << ENGINE_NAME << ' ' << ENGINE_VERSION << std::endl;
-    attacks::load_attacks();
 
-    Board board(FEN_EN_PASSANT);
-    std::cout << board << std::endl;
+    class MoveGenerator
+    {
+        public:
+        MoveGenerator() = default;
+        int generate_moves(const Board& board, Move moves[]);
 
-    MoveList list(board);
+        private:
+        template <PieceType Type>
+        void generate_piece_moves(const Board& board);
+        void generate_pawn_moves(const Board& board);
+        void generate_castling(const Board& board);
 
-    std::cout << list;
+        void extract_pawn(u64 bb, int offset, Piece piece);
+        void extract_double_push(u64 bb, int offset, Piece piece);
+        void extract_pawn_promotion(u64 bb, int offset, Piece piece);
+
+        int size = 0;
+        Move* arr = nullptr;
+
+        void add(Move);
+        
+    };
     
-    return EXIT_SUCCESS;
 }

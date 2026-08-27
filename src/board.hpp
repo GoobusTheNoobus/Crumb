@@ -23,12 +23,19 @@
 namespace crumb
 {
     constexpr u8 CASTLING_WK = 1, CASTLING_WQ = 2, CASTLING_BK = 4, CASTLING_BQ = 8;
+
     constexpr const char* FEN_STARTING = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    constexpr const char* FEN_KIWIPETE = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1";
+    constexpr const char* FEN_EN_PASSANT = "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1"; // named that because it tests en passant bugs in perft
 
     struct Board 
     {
         Board() = default;
         Board(const std::string& fen);
+
+        bool is_attacked(Square, Color by) const;
+        bool is_in_check(Color by) const;
+        bool is_in_check() const;
 
         u64 piece_bb[PIECETYPE_NB] = {0x00FF00000000FF00, 0x4200000000000042, 0x2400000000000024,
             0x8100000000000081, 0x0800000000000008, 0x1000000000000010}; // indexed by piece type ordinal

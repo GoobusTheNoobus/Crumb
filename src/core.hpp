@@ -19,6 +19,7 @@
 #pragma once
 #include <cassert>
 #include <cstdint>
+#include <iostream>
 #include <string>
 
 namespace crumb
@@ -134,6 +135,11 @@ namespace crumb
         return (Color)((int)piece / 6);
     }
 
+    [[nodiscard]] constexpr Color opposite(Color color)
+    {
+        return (Color)((int)color ^ 0x1);
+    }
+
     [[nodiscard]] constexpr char piece_char(Piece piece)
     {
         switch (piece) 
@@ -170,7 +176,7 @@ namespace crumb
             case 'r':  return Piece::BLACK_ROOK;
             case 'q':  return Piece::BLACK_QUEEN;
             case 'k':  return Piece::BLACK_KING;
-            default:   return Piece::NONE;
+            default:   std::cout << c << std::endl; return Piece::NONE;
         }
     }
 }

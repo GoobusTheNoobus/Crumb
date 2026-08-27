@@ -18,43 +18,46 @@
 
 #pragma once
 
+#include "board.hpp"
 #include "core.hpp"
+#include "move.hpp"
+#include "movegen.hpp"
+#include <ostream>
+
 namespace crumb
 {
-    constexpr u64 square_mask(Square sq)
+    class MoveList
     {
-        return 1ULL << (int)sq;
-    }
+        public:
+        MoveList(const Board& board) 
+        {
+            MoveGenerator generator;
+            size_ = generator.generate_moves(board, data_);
+        }
 
-    constexpr u64 file_mask(int file)
-    {
-        return 0x0101010101010101ULL << file;
-    }
+        inline Move operator[](int i) const
+        {
+            return data_[i];
+        }
 
-    constexpr u64 rank_mask(int rank)
-    {
-        return 0xFFULL << (rank * 8);
-    }
+        inline usize size() const
+        {
+            return size_;
+        }
 
-    constexpr bool is_occupied(u64 bb, Square sq)
-    {
-        return square_mask(sq) & bb;
-    }
+        private:
+        Move data_[256];
+        usize size_;
+    };
 
-    constexpr int trailing_zero(u64 bb) 
+    inline std::ostream& operator<<(std::ostream& os, const MoveList& list)
     {
-        return std::__countr_zero(bb);
-    }
+        for (int i = 0; i < list.size(); ++i)
+        {
+            os << to_string(list[i])<< std::endl;
+        }
 
-    constexpr int popcount(u64 bb)
-    {
-        return std::__popcount(bb);
-    }
-
-    inline int pop_lsb(u64& bb)
-    {
-        int tz = trailing_zero(bb);
-        bb &= bb - 1;
-        return tz;
+        os << "\nsize: " << list.size() << std::endl;
+        return os;
     }
 }
