@@ -18,6 +18,7 @@
 
 #pragma once
 #include "core.hpp"
+#include "move.hpp"
 #include <ostream>
 
 namespace crumb
@@ -32,15 +33,25 @@ namespace crumb
     {
         Board() = default;
         Board(const std::string& fen);
+        Board(const Board& other) = default;
 
         bool is_attacked(Square, Color by) const;
         bool is_in_check(Color by) const;
         bool is_in_check() const;
 
-        u64 piece_bb[PIECETYPE_NB] = {0x00FF00000000FF00, 0x4200000000000042, 0x2400000000000024,
-            0x8100000000000081, 0x0800000000000008, 0x1000000000000010}; // indexed by piece type ordinal
-        u64 color_bb[COLOR_NB] = {0xFFFF, 0xFFFF000000000000};     // indexed by color type ordinal
-        u64 occ = 0xFFFF00000000FFFF;
+        void load_fen(const std::string& fen);
+        void make_move(Move);
+        bool try_move(Move);
+
+        void clear_square(Square square);
+        void place_piece(Square square, Piece piece);
+
+        u64 piece_bb[PIECETYPE_NB]; // indexed by piece type ordinal
+        u64 color_bb[COLOR_NB];     // indexed by color type ordinal
+        u64 occ;
+        u64 hash;
+
+        Piece mailbox[BOARD_SIZE];
 
         Color side_to_move      = Color::WHITE;
         Square ep_square        = Square::NONE;

@@ -25,27 +25,27 @@
 namespace crumb
 {
 
-    class MoveGenerator
-    {
-        public:
-        MoveGenerator() = default;
-        int generate_moves(const Board& board, Move moves[]);
+class MoveGenerator
+{
+    public:
+    MoveGenerator() = default;
+    int generate_moves(const Board& board, Move moves[]);
 
-        private:
-        template <PieceType Type>
-        void generate_piece_moves(const Board& board);
-        void generate_pawn_moves(const Board& board);
-        void generate_castling(const Board& board);
+    private:
+    template <PieceType Type>
+    void generate_piece_moves(const Board& board);
+    void generate_pawn_moves(const Board& board);
+    void generate_castling(const Board& board);
 
-        void extract_pawn(u64 bb, int offset, Piece piece);
-        void extract_double_push(u64 bb, int offset, Piece piece);
-        void extract_pawn_promotion(u64 bb, int offset, Piece piece);
+    void extract_pawn(u64 bb, int offset, Piece piece);
+    void extract_double_push(u64 bb, int offset, Piece piece);
+    void extract_pawn_promotion(u64 bb, int offset, Piece piece);
 
-        int size = 0;
-        Move* arr = nullptr;
+    int size = 0;
+    Move* arr = nullptr;
 
-        void add(Move);
-        
-    };
+    void add(Move);
+    
+};
     
 }

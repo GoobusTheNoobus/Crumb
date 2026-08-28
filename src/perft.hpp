@@ -19,45 +19,10 @@
 #pragma once
 
 #include "board.hpp"
-#include "core.hpp"
-#include "move.hpp"
-#include "movegen.hpp"
-#include <ostream>
-
-namespace crumb
+namespace crumb::perft 
 {
-class MoveList
-{
-    public:
-    MoveList(const Board& board) 
-    {
-        MoveGenerator generator;
-        size_ = generator.generate_moves(board, data_);
-    }
 
-    inline Move operator[](int i) const
-    {
-        return data_[i];
-    }
+void perft_divide(const Board& board, int depth);
+u64 perft(const Board& board, int depth);
 
-    inline usize size() const
-    {
-        return size_;
-    }
-
-    private:
-    Move data_[256];
-    usize size_;
-};
-
-inline std::ostream& operator<<(std::ostream& os, const MoveList& list)
-{
-    for (int i = 0; i < list.size(); ++i)
-    {
-        os << to_string(list[i])<< std::endl;
-    }
-
-    os << "\nsize: " << list.size() << std::endl;
-    return os;
-}
 }

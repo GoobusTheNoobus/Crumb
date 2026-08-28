@@ -21,12 +21,14 @@
 
 namespace crumb::attacks
 {
-    void load_attacks();
+    
+void load_attacks();
 
-    u64 get_pawn_attacks(Square sq, Color);
-    u64 get_knight_attacks(Square sq);
-    u64 get_king_attacks(Square sq);
+u64 get_pawn_attacks(Square sq, Color);
+u64 get_knight_attacks(Square sq);
+u64 get_king_attacks(Square sq);
 
-    u64 get_bishop_attacks(Square sq, u64 blockers);
-    u64 get_rook_attacks(Square sq, u64 blockers);
+u64 get_bishop_attacks(Square sq, u64 blockers);
+u64 get_rook_attacks(Square sq, u64 blockers);
+
 }

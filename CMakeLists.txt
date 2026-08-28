@@ -10,6 +10,7 @@ add_executable(crumb
     src/board.cpp
     src/main.cpp
     src/movegen.cpp 
+    src/perft.cpp
 )
 
 target_include_directories(crumb PRIVATE src)

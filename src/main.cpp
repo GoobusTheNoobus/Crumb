@@ -20,7 +20,8 @@
 #include <iostream>
 #include "attacks.hpp"
 #include "board.hpp"
-#include "movelist.hpp"
+#include "perft.hpp"
+#include "zobrist.hpp"
 
 constexpr const char *ENGINE_NAME = "Crumb";
 constexpr const char *ENGINE_VERSION = "0.0.1";
@@ -31,13 +32,13 @@ int main(void)
 {
     std::cout << ENGINE_NAME << ' ' << ENGINE_VERSION << std::endl;
     attacks::load_attacks();
+    zobrist::load_randoms();
 
-    Board board(FEN_EN_PASSANT);
+    Board board;
+    board.load_fen(FEN_EN_PASSANT);
     std::cout << board << std::endl;
 
-    MoveList list(board);
-
-    std::cout << list;
+    perft::perft_divide(board, 7);
     
     return EXIT_SUCCESS;
 }

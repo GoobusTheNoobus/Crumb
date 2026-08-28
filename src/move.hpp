@@ -21,53 +21,53 @@
 #include "core.hpp"
 namespace crumb
 {
-    using Move = u32;
-    enum class MoveFlag : u8 { NORMAL, DOUBLE_PUSH, CASTLING, EN_PASSANT, PROMOQ, PROMOR, PROMOB, PROMON };
+using Move = u32;
+enum class MoveFlag : u8 { NORMAL, DOUBLE_PUSH, CASTLING, EN_PASSANT, PROMOQ, PROMOR, PROMOB, PROMON };
 
-    /*
-    Move Packing:
-    0-5 from
-    6-11 to
-    12-15 piece
-    16-19 flag
-    */
+/*
+Move Packing:
+0-5 from
+6-11 to
+12-15 piece
+16-19 flag
+*/
 
-    constexpr Square move_from(Move move) 
+constexpr Square move_from(Move move) 
+{
+    return Square(move & 0x3F);
+}
+
+constexpr Square move_to(Move move)
+{
+    return Square((move >> 6) & 0x3F);
+}
+
+constexpr Piece move_piece(Move move)
+{
+    return Piece((move >> 12) & 0xF);
+}
+
+constexpr MoveFlag move_flag(Move move)
+{
+    return MoveFlag((move >> 16) & 0x0F);
+}
+
+constexpr Move create_move(Square from, Square to, Piece moving, MoveFlag flag)
+{
+    return (int)from | (int)to << 6 | (int)moving << 12 | (int)flag << 16;
+}
+
+inline std::string to_string(Move move)
+{
+    std::string from = algebraic(move_from(move));
+    std::string to   = algebraic(move_to(move));
+
+    if (move_flag(move) >= MoveFlag::PROMOQ)
     {
-        return Square(move & 0x3F);
+        constexpr char PROMO_CHAR[] = {'q', 'r', 'b', 'n'};
+        return from + to + PROMO_CHAR[(int)move_flag(move) - (int)MoveFlag::PROMOQ];
     }
 
-    constexpr Square move_to(Move move)
-    {
-        return Square((move >> 6) & 0x3F);
-    }
-
-    constexpr Piece move_piece(Move move)
-    {
-        return Piece((move >> 12) & 0xF);
-    }
-
-    constexpr MoveFlag move_flag(Move move)
-    {
-        return MoveFlag((move >> 16) & 0x0F);
-    }
-
-    constexpr Move create_move(Square from, Square to, Piece moving, MoveFlag flag)
-    {
-        return (int)from | (int)to << 6 | (int)moving << 12 | (int)flag << 16;
-    }
-
-    inline std::string to_string(Move move)
-    {
-        std::string from = algebraic(move_from(move));
-        std::string to   = algebraic(move_to(move));
-
-        if (move_flag(move) >= MoveFlag::PROMOQ)
-        {
-            constexpr char PROMO_CHAR[] = {'q', 'r', 'b', 'n'};
-            return from + to + PROMO_CHAR[(int)move_flag(move) - (int)MoveFlag::PROMOQ];
-        }
-
-        return from + to;
-    }
+    return from + to;
+}
 }

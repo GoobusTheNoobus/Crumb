@@ -20,181 +20,352 @@
 #include "attacks.hpp"
 #include "bitboard.hpp"
 #include "core.hpp"
+#include "move.hpp"
+#include "zobrist.hpp"
 #include <cctype>
 #include <cstring>
+#include <ios>
 #include <iostream>
 #include <sstream>
 
 namespace crumb 
 {
-    std::ostream& operator<<(std::ostream& os, const Board& board)
+
+std::ostream& operator<<(std::ostream& os, const Board& board)
+{
+    for (int rank = 7; rank >= 0; --rank)
     {
-        for (int rank = 7; rank >= 0; --rank)
+        os << rank + 1 << " ";
+        for (int file = 0; file <= 7; ++file)
         {
-            os << rank + 1 << " ";
-            for (int file = 0; file <= 7; ++file)
-            {
-                Piece p_there = Piece::NONE;
-                Square sq = make_square(rank, file);
+            Square sq = make_square(rank, file);
+            Piece p_there = board.mailbox[(int)sq];
 
-                if (is_occupied(board.occ, sq))
-                    for (int p = 0; p < 6; ++p)
-                    {
-                        if (is_occupied(board.piece_bb[p], sq))
-                        {
-                            p_there = is_occupied(board.color_bb[0], sq) ? 
-                                      make_piece(PieceType(p), Color::WHITE) : 
-                                      make_piece(PieceType(p), Color::BLACK);
-                            break;
-                        }
-                    }
-
-                os << piece_char(p_there) << " ";
-            }
-
-            os << std::endl;
+            os << piece_char(p_there) << " ";
         }
 
-        os << "  a b c d e f g h\n\n";
-        return os;
+        os << std::endl;
     }
 
-    Board::Board(const std::string& fen)
+    os << "  a b c d e f g h\n\n";
+    os << "  side to move: " << ((bool)board.side_to_move ? "black" : "white") << '\n';
+    os << "  white castling kingside?: "   << std::boolalpha << (bool)(board.castling_rights & CASTLING_WK) << '\n';
+    os << "  white castling queenside?: "  << std::boolalpha << (bool)(board.castling_rights & CASTLING_WQ) << '\n';
+    os << "  black castling kingside?: "   << std::boolalpha << (bool)(board.castling_rights & CASTLING_BK) << '\n';
+    os << "  black castling queenside?: "  << std::boolalpha << (bool)(board.castling_rights & CASTLING_BQ) << '\n';
+    os << "  en passant square: " << algebraic(board.ep_square) << '\n';
+    os << "  rule-50 halfmove: " << board.halfmove_clock << '\n';
+    os << "  hash: 0x" << std::dec << board.hash << std::endl;
+    return os;
+}
+
+void Board::load_fen(const std::string& fen)
+{
+    std::memset(piece_bb, 0, sizeof(piece_bb));
+    std::memset(color_bb, 0, sizeof(color_bb));
+    std::memset(mailbox, (int)Piece::NONE, sizeof(mailbox));
+    occ = 0ULL;
+
+    constexpr int FEN_PART_BOARD = 0, FEN_PART_SIDE = 1, FEN_PART_CASTLING_RIGHTS = 2,
+                    FEN_PART_EP = 3, FEN_PART_HALFMOVE = 4;
+
+    std::istringstream iss(fen);
+    int part = 0;
+
+    std::string token;
+    int rank = 7, file = 0;
+    while (iss >> token && part <= FEN_PART_HALFMOVE)
     {
-        std::memset(piece_bb, 0, sizeof(piece_bb));
-        std::memset(color_bb, 0, sizeof(color_bb));
-        occ = 0ULL;
-
-        constexpr int FEN_PART_BOARD = 0, FEN_PART_SIDE = 1, FEN_PART_CASTLING_RIGHTS = 2,
-                      FEN_PART_EP = 3, FEN_PART_HALFMOVE = 4;
-
-        std::istringstream iss(fen);
-        int part = 0;
-
-        std::string token;
-        int rank = 7, file = 0;
-        while (iss >> token && part <= FEN_PART_HALFMOVE)
+        // std::cout << token << std::endl;
+        switch (part)
         {
-            // std::cout << token << std::endl;
-            switch (part)
+            case FEN_PART_BOARD:
             {
-                case FEN_PART_BOARD:
+                for (char c : token)
                 {
-                    for (char c : token)
+                    if (std::isdigit(c))
                     {
-                        if (std::isdigit(c))
-                        {
-                            file += c - '0';
-                            continue;
-                        }
-
-                        if (c == '/')
-                        {
-                            file = 0; 
-                            --rank;
-                            continue;
-                        }
-
-                        Piece p = char_to_piece(c);
-                        // std::cout << (int)p << std::endl;
-
-                        Square sq = make_square(rank, file);
-
-                        piece_bb[(int)type_of(p)] |= square_mask(sq);
-                        color_bb[(int)color_of(p)] |= square_mask(sq);
-
-                        ++file;
+                        file += c - '0';
+                        continue;
                     }
 
-                    occ = color_bb[0] | color_bb[1];
-
-                    break;
-                }
-
-                case FEN_PART_SIDE:
-                {
-                    if (token == "b")
+                    if (c == '/')
                     {
-                        side_to_move = Color::BLACK;
+                        file = 0; 
+                        --rank;
+                        continue;
                     }
 
-                    break;
+                    Piece p = char_to_piece(c);
+                    // std::cout << (int)p << std::endl;
+
+                    Square sq = make_square(rank, file);
+
+                    piece_bb[(int)type_of(p)] |= square_mask(sq);
+                    color_bb[(int)color_of(p)] |= square_mask(sq);
+                    mailbox[(int)sq] = p;
+
+                    ++file;
                 }
 
-                case FEN_PART_CASTLING_RIGHTS:
-                {
-                    for (char c : token)
-                    {
-                        switch (c) {
-                            case 'K': castling_rights |= CASTLING_WK; break;
-                            case 'Q': castling_rights |= CASTLING_WQ; break;
-                            case 'k': castling_rights |= CASTLING_BK; break;
-                            case 'q': castling_rights |= CASTLING_BQ; break;
-                            default: break;
-                        }
-                    }
+                occ = color_bb[0] | color_bb[1];
 
-                    break;
-                }
-
-                case FEN_PART_EP:
-                {
-                    ep_square = make_square(token);
-                    break;
-                }
-
-                case FEN_PART_HALFMOVE:
-                {
-                    halfmove_clock = std::atoi(token.data());
-                    break;
-                }
-
-                default:
-                    break;
+                break;
             }
 
-            ++part;
+            case FEN_PART_SIDE:
+            {
+                if (token == "b")
+                {
+                    side_to_move = Color::BLACK;
+                }
+
+                break;
+            }
+
+            case FEN_PART_CASTLING_RIGHTS:
+            {
+                for (char c : token)
+                {
+                    switch (c) {
+                        case 'K': castling_rights |= CASTLING_WK; break;
+                        case 'Q': castling_rights |= CASTLING_WQ; break;
+                        case 'k': castling_rights |= CASTLING_BK; break;
+                        case 'q': castling_rights |= CASTLING_BQ; break;
+                        default: break;
+                    }
+                }
+
+                break;
+            }
+
+            case FEN_PART_EP:
+            {
+                ep_square = make_square(token);
+                break;
+            }
+
+            case FEN_PART_HALFMOVE:
+            {
+                halfmove_clock = std::atoi(token.data());
+                break;
+            }
+
+            default:
+                break;
+        }
+
+        ++part;
+    }
+
+    hash = zobrist::compute_hash(*this);
+}
+
+bool Board::is_attacked(Square square, Color by) const
+{
+    u64 our_pieces = color_bb[(int)by];
+
+    u64 pawns = piece_bb[(int)PieceType::PAWN] & our_pieces;
+    if (pawns & attacks::get_pawn_attacks(square, opposite(by)))
+        return true;
+
+    u64 knights = piece_bb[(int)PieceType::KNIGHT] & our_pieces;
+    if (knights & attacks::get_knight_attacks(square))
+        return true;
+
+    u64 king = piece_bb[(int)PieceType::KING] & our_pieces;
+    if (king & attacks::get_king_attacks(square))
+        return true;
+
+    u64 bishops = piece_bb[(int)PieceType::BISHOP] & our_pieces;
+    u64 queens = piece_bb[(int)PieceType::QUEEN] & our_pieces;
+
+    if ((bishops | queens) & attacks::get_bishop_attacks(square, occ))
+        return true;
+
+    u64 rooks = piece_bb[(int)PieceType::ROOK] & our_pieces;
+
+    if ((rooks | queens) & attacks::get_rook_attacks(square, occ))
+        return true;
+
+    return false;
+}
+
+bool Board::is_in_check(Color color) const
+{
+    Square king_square = (Square)trailing_zero(piece_bb[(int)PieceType::KING] & color_bb[(int)color]);
+    return is_attacked(king_square, opposite(color));
+}
+
+bool Board::is_in_check() const
+{
+    return is_in_check(side_to_move);
+}
+
+void Board::clear_square(Square square)
+{
+    if (!(occ & square_mask(square)))
+        return;
+
+    Piece piece_there = mailbox[(int)square];
+    PieceType piece_type = type_of(piece_there);
+    Color piece_color = color_of(piece_there);
+
+    u64 mask = ~square_mask(square);
+
+    mailbox[(int)square] = Piece::NONE;
+    piece_bb[(int)piece_type] &= mask;
+    color_bb[(int)piece_color] &= mask;
+
+    occ &= mask;
+
+    hash ^= zobrist::piece_square[(int)piece_there][(int)square];
+}
+
+void Board::place_piece(Square square, Piece piece)
+{
+    if (piece == Piece::NONE)
+    {
+        clear_square(square);
+        return;
+    }
+
+    PieceType piece_type = type_of(piece);
+    Color piece_color = color_of(piece);
+
+    u64 mask = square_mask(square);
+
+    mailbox[(int)square] = piece;
+    piece_bb[(int)piece_type] |= mask;
+    color_bb[(int)piece_color] |= mask;
+
+    occ |= mask;
+
+    hash ^= zobrist::piece_square[(int)piece][(int)square];
+}
+
+constexpr PieceType PROMO_PIECES[] = {PieceType::QUEEN, PieceType::ROOK, PieceType::BISHOP, PieceType::KNIGHT};
+constexpr u8 CASTLING_MASKS[] = 
+{
+    13, 15, 15, 15, 12, 15, 15, 14,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+     7, 15, 15, 15,  3, 15, 15, 11,
+};
+
+void Board::make_move(Move move)
+{
+    Color us = side_to_move;
+    bool is_white = us == Color::WHITE;
+
+    Square from = move_from(move);
+    Square to   = move_to(move);
+    auto flag = move_flag(move);
+
+    Piece moving = move_piece(move);
+    PieceType moving_type = type_of(moving);
+    
+    hash ^= zobrist::black_to_move;
+    side_to_move = opposite(side_to_move);
+
+    if (ep_square != Square::NONE)
+    {
+        hash ^= zobrist::ep_files[file_of(ep_square)];
+        ep_square = Square::NONE;
+    }
+
+    if (mailbox[(int)to] != Piece::NONE || moving_type == PieceType::PAWN)
+    {
+        halfmove_clock = 0;
+    } 
+    else {
+        ++halfmove_clock;
+    }
+    
+    switch (flag)
+    {
+        case MoveFlag::NORMAL:
+        {
+            clear_square(from);
+            clear_square(to);
+            place_piece(to, moving);
+            break;
+        }
+
+        case MoveFlag::CASTLING:
+        {
+            bool king_side = to == Square::G1 || to == Square::G8;
+
+            Square rook_from = is_white ? (king_side ? Square::H1 : Square::A1) :
+                                          (king_side ? Square::H8 : Square::A8);
+            Square rook_to = is_white ? (king_side ? Square::F1 : Square::D1) :
+                                        (king_side ? Square::F8 : Square::D8);
+
+            clear_square(rook_from);
+            clear_square(from);
+
+            place_piece(to, moving);
+            place_piece(rook_to, make_piece(PieceType::ROOK, us));
+
+            break;
+        }
+
+        case MoveFlag::EN_PASSANT:
+        {
+            Square capture_square = is_white ? Square((int)to - 8) : Square((int)to + 8);
+
+            clear_square(capture_square);
+            clear_square(from);
+            place_piece(to, moving);
+
+            break;
+        }
+
+        case MoveFlag::DOUBLE_PUSH:
+        {
+            ep_square = is_white ? Square((int)to - 8) : Square((int)to + 8);
+
+            clear_square(from);
+            place_piece(to, moving);
+
+            break;
+        }
+
+        // promotion
+        default:
+        {
+            clear_square(from);
+            clear_square(to);
+            place_piece(to, make_piece(PROMO_PIECES[(int)flag - (int)MoveFlag::PROMOQ], us));
+
+            break;
         }
     }
 
-    bool Board::is_attacked(Square square, Color by) const
+    hash ^= zobrist::castling_hash(castling_rights);
+
+    castling_rights &= CASTLING_MASKS[(int)from];
+    castling_rights &= CASTLING_MASKS[(int)to];
+
+    hash ^= zobrist::castling_hash(castling_rights);
+
+    if (ep_square != Square::NONE)
     {
-        u64 our_pieces = color_bb[(int)by];
+        hash ^= zobrist::ep_files[file_of(ep_square)];
+    }
+}
 
-        u64 pawns = piece_bb[(int)PieceType::PAWN] & our_pieces;
-        if (pawns & attacks::get_pawn_attacks(square, opposite(by)))
-            return true;
+bool Board::try_move(Move move)
+{
+    make_move(move);
 
-        u64 knights = piece_bb[(int)PieceType::KNIGHT] & our_pieces;
-        if (knights & attacks::get_knight_attacks(square))
-            return true;
-
-        u64 king = piece_bb[(int)PieceType::KING] & our_pieces;
-        if (king & attacks::get_king_attacks(square))
-            return true;
-
-        u64 bishops = piece_bb[(int)PieceType::BISHOP] & our_pieces;
-        u64 queens = piece_bb[(int)PieceType::QUEEN] & our_pieces;
-
-        if ((bishops | queens) & attacks::get_bishop_attacks(square, occ))
-            return true;
-
-        u64 rooks = piece_bb[(int)PieceType::KING] & our_pieces;
-
-        if ((rooks | queens) & attacks::get_rook_attacks(square, occ))
-            return true;
-
+    if (is_in_check(opposite(side_to_move)))
         return false;
-    }
 
-    bool Board::is_in_check(Color color) const
-    {
-        Square king_square = (Square)trailing_zero(piece_bb[(int)PieceType::KING] | color_bb[(int)color]);
-        return is_attacked(king_square, opposite(color));
-    }
-
-    bool Board::is_in_check() const
-    {
-        return is_in_check(side_to_move);
-    }
+    return true;
+}
 }
