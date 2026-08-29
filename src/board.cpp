@@ -25,7 +25,6 @@
 #include "movelist.hpp"
 #include "zobrist.hpp"
 #include <cctype>
-#include <cstddef>
 #include <cstring>
 #include <ios>
 #include <iostream>

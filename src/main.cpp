@@ -19,10 +19,8 @@
 #include <cstdlib>
 #include <iostream>
 #include "attacks.hpp"
-#include "board.hpp"
 #include "eval.hpp"
 #include "uci.hpp"
-#include "search.hpp"
 #include "zobrist.hpp"
 
 using namespace crumb;
