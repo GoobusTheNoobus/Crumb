@@ -25,6 +25,32 @@
 namespace crumb
 {
 
+struct Timer 
+{
+    TimePoint start_time;
+    int max_ms;
+    std::atomic_bool stop_flag;
+
+    inline int elapsed() 
+    {
+        return std::max<int>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time).count(), 1);
+    }
+
+    inline bool should_stop()
+    {
+        bool yes = stop_flag || (max_ms > 0 && elapsed() >= max_ms);
+
+        return yes;
+    }
+};
+
+struct Info
+{
+    u64 nodes_searched = 0;
+    Move best_move = 0;
+    Depth seldepth = 0;
+};
+
 class Searcher
 {
     public:
@@ -38,46 +64,17 @@ class Searcher
 
     private:
 
-    struct Timer 
-    {
-        TimePoint start_time;
-        int max_ms;
-        std::atomic_bool stop_flag;
-
-        inline int elapsed() 
-        {
-            return std::max<int>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time).count(), 1);
-        }
-
-        inline bool should_stop()
-        {
-            bool yes = stop_flag || (max_ms > 0 && elapsed() >= max_ms);
-
-            return yes;
-        }
-
-
-    } timer;
-
-    struct Info
-    {
-        u64 nodes_searched = 0;
-        Move best_move = 0;
-    };
+    Timer timer;
 
     enum class NodeType : u8 { ROOT, NON_ROOT };
 
     template <NodeType type>
     Score search(Info &info, const Board& board, Depth depth, Depth plies, Score alpha, Score beta);
+    Score qsearch(Info &info, const Board& board, Depth plies, Score alpha, Score beta);
 
+    bool is_noisy(const Board&, Move) const;
     bool is_terminal() const;
 
-    u64 nodes_searched;
-    Move move;
-
-    
-
-    
 };
 
 }

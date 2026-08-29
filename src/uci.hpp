@@ -23,7 +23,7 @@ namespace crumb
 {
     
 inline constexpr const char *ENGINE_NAME = "Crumb";
-inline constexpr const char *ENGINE_VERSION = "0.1.0";
+inline constexpr const char *ENGINE_VERSION = "0.1.1";
 
 namespace uci 
 {

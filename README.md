@@ -21,6 +21,7 @@ As of the current version, here are all the features:
 * Search
     * Alpha-beta (version 0.1.0)
     * Iterative deepening (version 0.1.0)
+    * Quiescence search (version 0.1.1)
 * Evaluation
     * PeSTO Evaluation (version 0.1.0)
     * Tempo bonus (version 0.1.0)

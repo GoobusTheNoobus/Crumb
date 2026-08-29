@@ -70,7 +70,7 @@ void Searcher::start_search(Depth depth, int max_ms)
     // iterative deepening
     for (int current_depth = 1; current_depth <= depth; ++current_depth)
     {
-        int score = search<NodeType::ROOT>(info, board, current_depth, 0, -INF_SCORE, INF_SCORE);
+        Score score = search<NodeType::ROOT>(info, board, current_depth, 0, -INF_SCORE, INF_SCORE);
 
         if (timer.should_stop())
             break;
@@ -102,8 +102,10 @@ Score Searcher::search(Info& info, const Board& board, Depth depth, Depth plies,
 
     if (depth <= 0 && Type != NodeType::ROOT)
     {
-        return eval::evaluate(board);
+        return qsearch(info, board, plies + 1, alpha, beta);
     }
+
+    info.seldepth = std::max(info.seldepth, plies);
 
     MoveList moves(board);
 
@@ -125,7 +127,7 @@ Score Searcher::search(Info& info, const Board& board, Depth depth, Depth plies,
 
         ++move_count;
 
-        int score = -search<NodeType::NON_ROOT>(info, child, depth - 1, plies + 1, -beta, -alpha);
+        Score score = -search<NodeType::NON_ROOT>(info, child, depth - 1, plies + 1, -beta, -alpha);
 
         if (score > best_score)
         {
@@ -152,6 +154,55 @@ Score Searcher::search(Info& info, const Board& board, Depth depth, Depth plies,
     return best_score;
 }
 
+Score Searcher::qsearch(Info &info, const Board& board, Depth plies, Score alpha, Score beta)
+{
+    ++info.nodes_searched;
+
+    if (timer.should_stop())
+        return 0;
+
+    if (hashes.is_repetition(board.hash, board.halfmove_clock) || board.halfmove_clock >= 100)
+        return DRAW_SCORE;
+
+    bool in_check = board.is_in_check();
+    Score static_eval = eval::evaluate(board);
+
+    if (!in_check && static_eval >= beta)
+        return static_eval;
+
+    alpha = std::max(alpha, static_eval);
+
+    info.seldepth = std::max(info.seldepth, plies);
+
+    MoveList moves(board);
+    hashes.hashes[hashes.count++] = board.hash;
+
+    for (int i = 0; i < moves.size(); ++i)
+    {
+        Move move = moves[i];
+
+        bool search_move = in_check || is_noisy(board, move);
+
+        if (!search_move)
+            continue;
+
+        Board child = board;
+        if (!child.try_move(move))
+            continue;
+
+        Score score = -qsearch(info, child, plies + 1, -beta, -alpha);
+
+        alpha = std::max(alpha, score);
+
+        if (alpha >= beta)
+            break;
+    }
+
+    hashes.count--;
+
+    return alpha;
+}
+
 bool Searcher::is_terminal() const
 {
     MoveList moves(board);
@@ -163,6 +214,11 @@ bool Searcher::is_terminal() const
     }
 
     return true;
+}
+
+bool Searcher::is_noisy(const Board& board, Move move) const
+{
+    return move_flag(move) >= MoveFlag::EN_PASSANT || board.mailbox[(int)move_to(move)] != Piece::NONE;
 }
 
 }

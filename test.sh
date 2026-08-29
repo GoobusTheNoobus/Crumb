@@ -27,4 +27,3 @@ set -e
             -concurrency 10 \
             -sprt elo0=0 elo1=10 alpha=0.05 beta=0.05 \
             -pgnout file=sprt.pgn \
-            -log file=sprt.log engine=true
