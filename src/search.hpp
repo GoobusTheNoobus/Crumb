@@ -31,7 +31,7 @@ class Searcher
     Searcher() = default;
 
     Board board;
-    HashStack stack;
+    HashStack hashes;
 
     void start_search(Depth depth, int max_ms);
     void stop_search();

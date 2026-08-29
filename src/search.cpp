@@ -97,7 +97,7 @@ Score Searcher::search(Info& info, const Board& board, Depth depth, Depth plies,
     if (timer.should_stop())
         return 0;
 
-    if (stack.is_repetition(board.hash, board.halfmove_clock) || board.halfmove_clock >= 100)
+    if (hashes.is_repetition(board.hash, board.halfmove_clock) || board.halfmove_clock >= 100)
         return DRAW_SCORE;
 
     if (depth <= 0 && Type != NodeType::ROOT)
@@ -107,7 +107,7 @@ Score Searcher::search(Info& info, const Board& board, Depth depth, Depth plies,
 
     MoveList moves(board);
 
-    stack.hashes[stack.count++] = board.hash;
+    hashes.hashes[hashes.count++] = board.hash;
 
     Score best_score = -INF_SCORE;
     Move best_move = 0;
@@ -139,7 +139,7 @@ Score Searcher::search(Info& info, const Board& board, Depth depth, Depth plies,
             break;
     }
 
-    stack.count--;
+    hashes.count--;
 
     if (move_count == 0)
     {

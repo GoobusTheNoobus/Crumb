@@ -18,12 +18,13 @@
 
 set -e
 
-./fastchess -engine cmd="./crumb_old" name="Crumb base version" \
-          -engine cmd="./crumb_new" name="Crumb new version" \
-          -each tc="10+0.1" \
-          -openings file="8moves_v3.pgn" format=pgn order=random \
-          -rounds 10000 \
-          -repeat \
-          -concurrency 10 \
-          -sprt elo0=0 elo1=10 alpha=0.05 beta=0.05 \
-          -pgnout file=sprt.pgn
+./fastchess -engine cmd="./crumb_new" name="Crumb new version" \
+            -engine cmd="./crumb_old" name="Crumb base version" \
+            -each tc="10+0.1" \
+            -openings file="8moves_v3.pgn" format=pgn order=random \
+            -rounds 10000 \
+            -repeat \
+            -concurrency 10 \
+            -sprt elo0=0 elo1=10 alpha=0.05 beta=0.05 \
+            -pgnout file=sprt.pgn \
+            -log file=sprt.log engine=true
