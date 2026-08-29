@@ -32,22 +32,22 @@ class MoveList
     MoveList(const Board& board) 
     {
         MoveGenerator generator;
-        size_ = generator.generate_moves(board, data_);
+        count = generator.generate_moves(board, data);
     }
 
     inline Move operator[](int i) const
     {
-        return data_[i];
+        return data[i];
     }
 
     inline usize size() const
     {
-        return size_;
+        return count;
     }
 
     private:
-    Move data_[256];
-    usize size_;
+    Move data[256];
+    usize count;
 };
 
 inline std::ostream& operator<<(std::ostream& os, const MoveList& list)

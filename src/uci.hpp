@@ -18,11 +18,21 @@
 
 #pragma once
 
-#include "board.hpp"
-namespace crumb::perft 
+#include <sstream>
+namespace crumb
+{
+    
+inline constexpr const char *ENGINE_NAME = "Crumb";
+inline constexpr const char *ENGINE_VERSION = "0.0.1";
+
+namespace uci 
 {
 
-void perft_divide(const Board& board, Depth depth);
-u64 perft(const Board& board, Depth depth);
+void loop();
+
+void handle_position(std::istringstream&);
+void handle_go(std::istringstream&);
+
+}
 
 }

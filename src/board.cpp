@@ -20,12 +20,16 @@
 #include "attacks.hpp"
 #include "bitboard.hpp"
 #include "core.hpp"
+#include "eval.hpp"
 #include "move.hpp"
+#include "movelist.hpp"
 #include "zobrist.hpp"
 #include <cctype>
+#include <cstddef>
 #include <cstring>
 #include <ios>
 #include <iostream>
+#include <optional>
 #include <sstream>
 
 namespace crumb 
@@ -54,8 +58,11 @@ std::ostream& operator<<(std::ostream& os, const Board& board)
     os << "  black castling kingside?: "   << std::boolalpha << (bool)(board.castling_rights & CASTLING_BK) << '\n';
     os << "  black castling queenside?: "  << std::boolalpha << (bool)(board.castling_rights & CASTLING_BQ) << '\n';
     os << "  en passant square: " << algebraic(board.ep_square) << '\n';
-    os << "  rule-50 halfmove: " << board.halfmove_clock << '\n';
-    os << "  hash: 0x" << std::dec << board.hash << std::endl;
+    os << "  rule-50 halfmove: " << board.halfmove_clock << '\n' << '\n';
+    os << "  mg material score: " << board.mg_score << '\n';
+    os << "  eg material score: " << board.eg_score << '\n' << '\n';
+    os << "  hash: 0x" << std::dec << board.hash << '\n' << std::endl;
+
     return os;
 }
 
@@ -64,7 +71,17 @@ void Board::load_fen(const std::string& fen)
     std::memset(piece_bb, 0, sizeof(piece_bb));
     std::memset(color_bb, 0, sizeof(color_bb));
     std::memset(mailbox, (int)Piece::NONE, sizeof(mailbox));
+
     occ = 0ULL;
+    hash = 0;
+
+    side_to_move            = Color::WHITE;
+    ep_square               = Square::NONE;
+    castling_rights         = 0;
+    halfmove_clock          = 0;
+
+    mg_score = 0;
+    eg_score = 0;
 
     constexpr int FEN_PART_BOARD = 0, FEN_PART_SIDE = 1, FEN_PART_CASTLING_RIGHTS = 2,
                     FEN_PART_EP = 3, FEN_PART_HALFMOVE = 4;
@@ -97,18 +114,12 @@ void Board::load_fen(const std::string& fen)
                     }
 
                     Piece p = char_to_piece(c);
-                    // std::cout << (int)p << std::endl;
-
                     Square sq = make_square(rank, file);
 
-                    piece_bb[(int)type_of(p)] |= square_mask(sq);
-                    color_bb[(int)color_of(p)] |= square_mask(sq);
-                    mailbox[(int)sq] = p;
+                    place_piece(sq, p);
 
                     ++file;
                 }
-
-                occ = color_bb[0] | color_bb[1];
 
                 break;
             }
@@ -220,6 +231,9 @@ void Board::clear_square(Square square)
     occ &= mask;
 
     hash ^= zobrist::piece_square[(int)piece_there][(int)square];
+
+    mg_score -= eval::mg_table(piece_color, piece_type, square);
+    eg_score -= eval::eg_table(piece_color, piece_type, square);
 }
 
 void Board::place_piece(Square square, Piece piece)
@@ -242,6 +256,9 @@ void Board::place_piece(Square square, Piece piece)
     occ |= mask;
 
     hash ^= zobrist::piece_square[(int)piece][(int)square];
+
+    mg_score += eval::mg_table(piece_color, piece_type, square);
+    eg_score += eval::eg_table(piece_color, piece_type, square);
 }
 
 constexpr PieceType PROMO_PIECES[] = {PieceType::QUEEN, PieceType::ROOK, PieceType::BISHOP, PieceType::KNIGHT};
@@ -367,5 +384,48 @@ bool Board::try_move(Move move)
         return false;
 
     return true;
+}
+
+bool HashStack::is_repetition(u64 current, u8 rule50) const
+{
+    if (count < 2)
+        return false;
+
+    int occurrences = 0;
+
+    int last_irreversible = count > rule50 ? count - rule50 : 0;
+
+    for (int i = static_cast<int>(count) - 2; i >= last_irreversible; i -= 2)
+    {
+        if (hashes[i] == current)
+        {
+            ++occurrences;
+
+            if (occurrences >= 2)
+                return true;
+        }
+    }
+
+    return false;
+}
+
+std::optional<Move> Board::parse(const std::string& str)
+{
+    MoveList moves(*this);
+
+    for (int i = 0; i < moves.size(); ++i)
+    {
+        if (to_string(moves[i]) == str)
+        {
+            Board copy = *this;
+            if (copy.try_move(moves[i]))
+                return moves[i];
+            else
+                return std::nullopt;
+        }
+            
+    }
+
+    return std::nullopt;
 }
 }

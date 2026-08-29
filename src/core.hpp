@@ -21,6 +21,7 @@
 #include <cstdint>
 #include <iostream>
 #include <string>
+#include <chrono>
 
 namespace crumb
 {
@@ -57,6 +58,11 @@ enum class Square : u8
 };
 
 // helpers for square & file & rank
+
+[[nodiscard]] constexpr Square flipped_square(Square square)
+{
+    return (Square)((int)square ^ 56);
+}
 
 [[nodiscard]] constexpr Square make_square(int rank, int file)
 {
@@ -179,5 +185,26 @@ enum class Color : u8
         default:   std::cout << c << std::endl; return Piece::NONE;
     }
 }
+
+// other aliases
+
+using Score = i16;
+using Depth = i8;
+
+namespace chrono = std::chrono;
+using SteadyClock = chrono::steady_clock;
+using TimePoint = SteadyClock::time_point;
+
+// constants
+
+constexpr Score MIN_CP_SCORE        = -100'00;
+constexpr Score MAX_CP_SCORE        = 100'00;
+constexpr Score MATE_SCORE          = 200'00;
+constexpr Score INF_SCORE           = 300'00;
+constexpr Score DRAW_SCORE          = 0;
+
+constexpr Depth MAX_DEPTH           = 100;
+constexpr Depth MIN_DEPTH           = 0;
+
 }
 

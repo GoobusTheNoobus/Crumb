@@ -20,25 +20,23 @@
 #include <iostream>
 #include "attacks.hpp"
 #include "board.hpp"
-#include "perft.hpp"
+#include "eval.hpp"
+#include "uci.hpp"
+#include "search.hpp"
 #include "zobrist.hpp"
-
-constexpr const char *ENGINE_NAME = "Crumb";
-constexpr const char *ENGINE_VERSION = "0.0.1";
 
 using namespace crumb;
 
 int main(void)
 {
     std::cout << ENGINE_NAME << ' ' << ENGINE_VERSION << std::endl;
+
+    // init
     attacks::load_attacks();
     zobrist::load_randoms();
+    eval::load_eval_tables();
 
-    Board board;
-    board.load_fen(FEN_EN_PASSANT);
-    std::cout << board << std::endl;
-
-    perft::perft_divide(board, 7);
+    uci::loop();
     
     return EXIT_SUCCESS;
 }

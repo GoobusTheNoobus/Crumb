@@ -67,3 +67,14 @@ vcpkg_installed/
 # test output & cache
 Testing/
 .cache/
+
+# clangd
+.clangd
+
+# testing
+fastchess
+8moves_v3.pgn
+
+crumb
+crumb_new
+crumb_old

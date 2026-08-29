@@ -19,10 +19,16 @@
 #pragma once
 
 #include "board.hpp"
-namespace crumb::perft 
+#include "core.hpp"
+namespace crumb::eval
 {
 
-void perft_divide(const Board& board, Depth depth);
-u64 perft(const Board& board, Depth depth);
+void load_eval_tables();
+
+int get_phase(const u64 piece_bb[]);
+int mg_table(Color, PieceType, Square);
+int eg_table(Color, PieceType, Square);
+
+int evaluate(const Board&);
 
 }

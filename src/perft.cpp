@@ -26,7 +26,7 @@
 namespace crumb::perft
 {
 
-void perft_divide(const Board& board, int depth)
+void perft_divide(const Board& board, Depth depth)
 {
     if (depth <= 0)
     {
@@ -64,7 +64,7 @@ void perft_divide(const Board& board, int depth)
     std::cout << "Nodes per second: " << (total_nodes * 1000 / elapsed) << '\n' << std::endl;
 }
 
-u64 perft(const Board& board, int depth)
+u64 perft(const Board& board, Depth depth)
 {
     if (depth <= 0)
     {
