@@ -113,7 +113,7 @@ void handle_position(std::istringstream& stream)
         search.board.load_fen(fen);
     }
 
-    search.stack.count = 0;
+    search.hashes.count = 0;
 
     if (token == "moves")
     {
@@ -123,7 +123,7 @@ void handle_position(std::istringstream& stream)
 
             if (!move) break;
 
-            search.stack.hashes[search.stack.count++] = search.board.hash;
+            search.hashes.hashes[search.hashes.count++] = search.board.hash;
             search.board.make_move(move.value());
         }
     }
