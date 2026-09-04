@@ -75,8 +75,9 @@ void Searcher::start_search(Depth depth, int max_ms) {
 
         int elapsed = timer.elapsed();
 
-        std::cout << "info depth " << current_depth << " score " << score_string(score) << " nodes "
-                  << info.nodes_searched << " hashfull " << tt.hashfull() << " nps "
+        std::cout << "info depth " << current_depth << " seldepth " << (int)info.seldepth
+                  << " score " << score_string(score) << " nodes " << info.nodes_searched
+                  << " hashfull " << tt.hashfull() << " nps "
                   << (info.nodes_searched * 1000 / elapsed) << " time " << elapsed << " pv "
                   << to_string(info.best_move) << std::endl;
     }
@@ -111,7 +112,7 @@ Score Searcher::search(Info& info, const Board& board, Depth depth, Depth plies,
     if (entry && entry->full_key == board.hash) {
         tt_move = entry->best_move;
 
-        if (entry->depth >= depth && Type == NodeType::NON_ROOT) {
+        if (entry->depth >= depth && Type == NodeType::NON_PV) {
             Score tt_score = entry->score;
 
             if (tt_score > MAX_CP_SCORE)
@@ -119,7 +120,7 @@ Score Searcher::search(Info& info, const Board& board, Depth depth, Depth plies,
             else if (tt_score < MIN_CP_SCORE)
                 tt_score += plies;
 
-            if (Type == NodeType::NON_ROOT && entry->flag == TTFlag::EXACT)
+            if (entry->flag == TTFlag::EXACT)
                 return tt_score;
 
             if (entry->flag == TTFlag::LOWERBOUND)
@@ -154,7 +155,21 @@ Score Searcher::search(Info& info, const Board& board, Depth depth, Depth plies,
 
         ++move_count;
 
-        Score score = -search<NodeType::NON_ROOT>(info, child, depth - 1, plies + 1, -beta, -alpha);
+        if (Type == NodeType::ROOT && timer.elapsed() > 1000) {
+            std::cout << "info currmovenumber " << move_count << " currmove " << to_string(move)
+                      << " nodes " << info.nodes_searched << " time " << timer.elapsed() << " nps "
+                      << (info.nodes_searched * 1000 / timer.elapsed()) << std::endl;
+        }
+
+        Score score;
+        if (Type == NodeType::NON_PV || move_count > 1) {
+            score =
+                -search<NodeType::NON_PV>(info, child, depth - 1, plies + 1, -alpha - 1, -alpha);
+        }
+
+        if (Type != NodeType::NON_PV && (move_count == 1 || score > alpha)) {
+            score = -search<NodeType::PV>(info, child, depth - 1, plies + 1, -beta, -alpha);
+        }
 
         if (score > best_score) {
             best_score = score;

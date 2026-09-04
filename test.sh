@@ -18,8 +18,8 @@
 
 set -e
 
-./fastchess -engine cmd="./crumb_old" name="Crumb" \
-            -engine cmd="./stash11" name="Stash 11" \
+./fastchess -engine cmd="./crumb_new" name="Crumb new" \
+            -engine cmd="./crumb_old" name="Crumb old" \
             -each tc="10+0.1" \
             -openings file="8moves_v3.pgn" format=pgn order=random \
             -rounds 10000 \

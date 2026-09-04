@@ -22,19 +22,19 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_executable(crumb
-    src/attacks.cpp
-    src/board.cpp
-    src/eval.cpp
-    src/main.cpp
-    src/movegen.cpp 
-    src/perft.cpp
-    src/search.cpp
-    src/tt.cpp
-    src/uci.cpp
-    src/ordering.cpp
+    source/attacks.cpp
+    source/board.cpp
+    source/eval.cpp
+    source/main.cpp
+    source/movegen.cpp 
+    source/perft.cpp
+    source/search.cpp
+    source/tt.cpp
+    source/uci.cpp
+    source/ordering.cpp
 )
 
-target_include_directories(crumb PRIVATE src)
+target_include_directories(crumb PRIVATE source)
 
 # object generation
 target_compile_options(crumb PRIVATE

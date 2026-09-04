@@ -64,7 +64,7 @@ private:
     Timer timer;
     TranspositionTable tt;
 
-    enum class NodeType : u8 { ROOT, NON_ROOT };
+    enum class NodeType : u8 { ROOT, NON_PV, PV };
 
     template <NodeType type>
     Score search(Info& info, const Board& board, Depth depth, Depth plies, Score alpha, Score beta);
