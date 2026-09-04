@@ -20,8 +20,8 @@
 
 #include "board.hpp"
 #include "core.hpp"
-namespace crumb::eval
-{
+
+namespace crumb::eval {
 
 void load_eval_tables();
 
@@ -31,4 +31,4 @@ int eg_table(Color, PieceType, Square);
 
 int evaluate(const Board&);
 
-}
+} // namespace crumb::eval

@@ -19,20 +19,18 @@
 #pragma once
 
 #include <sstream>
-namespace crumb
-{
-    
-inline constexpr const char *ENGINE_NAME = "Crumb";
-inline constexpr const char *ENGINE_VERSION = "0.1.1";
+namespace crumb {
 
-namespace uci 
-{
+inline constexpr const char* ENGINE_NAME = "Crumb";
+inline constexpr const char* ENGINE_VERSION = "0.1.1";
+
+namespace uci {
 
 void loop();
 
 void handle_position(std::istringstream&);
 void handle_go(std::istringstream&);
 
-}
+} // namespace uci
 
-}
+} // namespace crumb

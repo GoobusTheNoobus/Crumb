@@ -20,40 +20,38 @@
 
 #include "board.hpp"
 #include "core.hpp"
+#include "tt.hpp"
 #include <atomic>
 #include <chrono>
-namespace crumb
-{
+namespace crumb {
 
-struct Timer 
-{
+struct Timer {
     TimePoint start_time;
     int max_ms;
     std::atomic_bool stop_flag;
 
-    inline int elapsed() 
-    {
-        return std::max<int>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time).count(), 1);
+    inline int elapsed() {
+        return std::max<int>(std::chrono::duration_cast<std::chrono::milliseconds>(
+                                 std::chrono::steady_clock::now() - start_time)
+                                 .count(),
+                             1);
     }
 
-    inline bool should_stop()
-    {
+    inline bool should_stop() {
         bool yes = stop_flag || (max_ms > 0 && elapsed() >= max_ms);
 
         return yes;
     }
 };
 
-struct Info
-{
+struct Info {
     u64 nodes_searched = 0;
     Move best_move = 0;
     Depth seldepth = 0;
 };
 
-class Searcher
-{
-    public:
+class Searcher {
+public:
     Searcher() = default;
 
     Board board;
@@ -62,19 +60,18 @@ class Searcher
     void start_search(Depth depth, int max_ms);
     void stop_search();
 
-    private:
-
+private:
     Timer timer;
+    TranspositionTable tt;
 
     enum class NodeType : u8 { ROOT, NON_ROOT };
 
     template <NodeType type>
-    Score search(Info &info, const Board& board, Depth depth, Depth plies, Score alpha, Score beta);
-    Score qsearch(Info &info, const Board& board, Depth plies, Score alpha, Score beta);
+    Score search(Info& info, const Board& board, Depth depth, Depth plies, Score alpha, Score beta);
+    Score qsearch(Info& info, const Board& board, Depth plies, Score alpha, Score beta);
 
     bool is_noisy(const Board&, Move) const;
     bool is_terminal() const;
-
 };
 
-}
+} // namespace crumb

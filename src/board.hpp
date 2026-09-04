@@ -22,25 +22,24 @@
 #include <optional>
 #include <ostream>
 
-namespace crumb
-{
+namespace crumb {
 constexpr u8 CASTLING_WK = 1, CASTLING_WQ = 2, CASTLING_BK = 4, CASTLING_BQ = 8;
 
 constexpr const char* FEN_STARTING = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-constexpr const char* FEN_KIWIPETE = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1";
-constexpr const char* FEN_EN_PASSANT = "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1"; // named that because it tests en passant bugs in perft
+constexpr const char* FEN_KIWIPETE =
+    "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1";
+constexpr const char* FEN_EN_PASSANT =
+    "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1"; // named that because it tests en passant bugs in
+                                                 // perft
 
-struct HashStack
-{
+struct HashStack {
     u64 hashes[2048];
     usize count = 0;
 
     bool is_repetition(u64 current, u8 rule50) const;
-
 };
 
-struct Board 
-{
+struct Board {
     Board() = default;
     Board(const std::string& fen);
     Board(const Board& other) = default;
@@ -64,16 +63,16 @@ struct Board
     u64 color_bb[COLOR_NB];     // indexed by color type ordinal
     u64 occ;
     u64 hash;
-    
+
     Score mg_score = 0;
     Score eg_score = 0;
 
-    Color side_to_move      = Color::WHITE;
-    Square ep_square        = Square::NONE;
-    u8 castling_rights      = 0;
-    u8 halfmove_clock       = 0;
+    Color side_to_move = Color::WHITE;
+    Square ep_square = Square::NONE;
+    u8 castling_rights = 0;
+    u8 halfmove_clock = 0;
 };
 
 std::ostream& operator<<(std::ostream&, const Board&);
 
-}
+} // namespace crumb

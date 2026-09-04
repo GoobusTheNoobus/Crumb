@@ -18,30 +18,44 @@
 
 #pragma once
 
-#include "board.hpp"
 #include "core.hpp"
 #include "move.hpp"
+#include <vector>
 
 namespace crumb {
 
-class MoveGenerator {
-public:
-    MoveGenerator() = default;
-    int generate_moves(const Board& board, Move moves[]);
+inline constexpr usize DEFAULT_TT_MB = 64;
 
-private:
-    template <PieceType Type> void generate_piece_moves(const Board& board);
-    void generate_pawn_moves(const Board& board);
-    void generate_castling(const Board& board);
-
-    void extract_pawn(u64 bb, int offset, Piece piece);
-    void extract_double_push(u64 bb, int offset, Piece piece);
-    void extract_pawn_promotion(u64 bb, int offset, Piece piece);
-
-    int size = 0;
-    Move* arr = nullptr;
-
-    void add(Move);
+enum class TTFlag {
+    EXACT,
+    LOWERBOUND,
+    UPPERBOUND,
 };
 
+struct TranspositionEntry {
+    u64 full_key;
+    Move best_move;
+    Score score;
+    Depth depth;
+    TTFlag flag;
+
+    inline bool is_null() { return best_move == 0; }
+};
+
+class TranspositionTable {
+public:
+    TranspositionTable();
+
+    const TranspositionEntry* probe(u64 key) const;
+    void store(TranspositionEntry);
+
+    int hashfull() const;
+    void clear();
+
+private:
+    std::vector<TranspositionEntry> data;
+
+    usize mb_to_size(int mb) const;
+    usize index_of(u64 key) const;
+};
 } // namespace crumb

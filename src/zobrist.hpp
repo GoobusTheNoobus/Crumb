@@ -21,8 +21,7 @@
 #include "board.hpp"
 #include "core.hpp"
 #include <random>
-namespace crumb::zobrist
-{
+namespace crumb::zobrist {
 inline u64 piece_square[PIECE_NB][BOARD_SIZE];
 inline u64 castling[4];
 inline u64 ep_files[BOARD_WIDTH];
@@ -30,36 +29,30 @@ inline u64 black_to_move;
 
 // we fill all variables with random value for
 // zobrist hashing
-inline void load_randoms()
-{
+inline void load_randoms() {
     std::mt19937_64 random(67);
 
     // piece_square
-    for (int p = 0; p < PIECE_NB; ++p)
-    {
-        for (int sq = 0; sq < BOARD_SIZE; ++sq)
-        {
+    for (int p = 0; p < PIECE_NB; ++p) {
+        for (int sq = 0; sq < BOARD_SIZE; ++sq) {
             piece_square[p][sq] = random();
         }
     }
 
     // castling
-    for (int i = 0; i < 4; ++i)
-    {
+    for (int i = 0; i < 4; ++i) {
         castling[i] = random();
     }
 
     // ep_files
-    for (int i = 0; i < BOARD_WIDTH; ++i)
-    {
+    for (int i = 0; i < BOARD_WIDTH; ++i) {
         ep_files[i] = random();
     }
 
     black_to_move = random();
 }
 
-inline u64 castling_hash(u8 rights)
-{
+inline u64 castling_hash(u8 rights) {
     u64 hash = 0;
 
     hash ^= (rights & CASTLING_WK) ? castling[0] : 0;
@@ -70,12 +63,10 @@ inline u64 castling_hash(u8 rights)
     return hash;
 }
 
-inline u64 compute_hash(const Board& board)
-{
+inline u64 compute_hash(const Board& board) {
     u64 hash = 0;
 
-    for (int sq = 0; sq < BOARD_SIZE; ++sq)
-    {
+    for (int sq = 0; sq < BOARD_SIZE; ++sq) {
         if (board.mailbox[sq] != Piece::NONE)
             hash ^= piece_square[(int)board.mailbox[sq]][sq];
     }
@@ -87,4 +78,4 @@ inline u64 compute_hash(const Board& board)
 
     return hash;
 }
-}
+} // namespace crumb::zobrist

@@ -27,18 +27,15 @@
 #include <string>
 #include <thread>
 
-namespace crumb::uci
-{
+namespace crumb::uci {
 namespace {
 Searcher search;
 std::thread search_thread;
-}
- 
-void loop()
-{
+} // namespace
+
+void loop() {
     search.board.load_fen(FEN_STARTING);
-    while (true)
-    {
+    while (true) {
         std::string input;
         std::getline(std::cin, input);
 
@@ -46,33 +43,22 @@ void loop()
         std::string command;
         stream >> command;
 
-        if (command == "position")
-        {
+        if (command == "position") {
             handle_position(stream);
-        }
-        else if (command == "go")
-        {
+        } else if (command == "go") {
             handle_go(stream);
-        }
-        else if (command == "isready")
-        {
+        } else if (command == "isready") {
             std::cout << "readyok\n";
-        }
-        else if (command == "uci")
-        {
+        } else if (command == "uci") {
             std::cout << "id name " << ENGINE_NAME << ' ' << ENGINE_VERSION << '\n';
             std::cout << "id author GoobusTheNoobus\n";
             std::cout << "uciok\n";
-        }
-        else if (command == "stop")
-        {
+        } else if (command == "stop") {
             search.stop_search();
 
             if (search_thread.joinable())
                 search_thread.join();
-        }
-        else if (command == "quit")
-        {
+        } else if (command == "quit") {
             search.stop_search();
 
             if (search_thread.joinable())
@@ -88,25 +74,21 @@ void loop()
         search_thread.join();
 }
 
-void handle_position(std::istringstream& stream)
-{
+void handle_position(std::istringstream& stream) {
     search.stop_search();
 
     std::string token;
     stream >> token;
 
-    if (token == "startpos")
-    {
+    if (token == "startpos") {
         search.board.load_fen(FEN_STARTING);
         stream >> token;
     }
 
-    else if (token == "fen")
-    {
+    else if (token == "fen") {
         std::string fen;
 
-        while (stream >> token && token != "moves")
-        {
+        while (stream >> token && token != "moves") {
             fen += token + " ";
         }
 
@@ -115,13 +97,12 @@ void handle_position(std::istringstream& stream)
 
     search.hashes.count = 0;
 
-    if (token == "moves")
-    {
-        while (stream >> token)
-        {
+    if (token == "moves") {
+        while (stream >> token) {
             std::optional<Move> move = search.board.parse(token);
 
-            if (!move) break;
+            if (!move)
+                break;
 
             search.hashes.hashes[search.hashes.count++] = search.board.hash;
             search.board.make_move(move.value());
@@ -129,8 +110,7 @@ void handle_position(std::istringstream& stream)
     }
 }
 
-void handle_go(std::istringstream& stream)
-{
+void handle_go(std::istringstream& stream) {
     search.stop_search();
 
     if (search_thread.joinable())
@@ -146,8 +126,7 @@ void handle_go(std::istringstream& stream)
     int wtime = 0;
     int btime = 0;
 
-    while (stream >> token)
-    {
+    while (stream >> token) {
         if (token == "depth")
             stream >> depth;
         else if (token == "movetime")
@@ -160,8 +139,7 @@ void handle_go(std::istringstream& stream)
             stream >> winc;
         else if (token == "binc")
             stream >> binc;
-        else if (token == "perft")
-        {
+        else if (token == "perft") {
             Depth perft_depth;
             stream >> perft_depth;
 
@@ -174,10 +152,9 @@ void handle_go(std::istringstream& stream)
     if (movetime > 0)
         time_ms = movetime;
 
-    else if (wtime > 0 || btime > 0)
-    {
+    else if (wtime > 0 || btime > 0) {
         int our_time = search.board.side_to_move == Color::WHITE ? wtime : btime;
-        int our_inc  = search.board.side_to_move == Color::WHITE ? winc : binc;
+        int our_inc = search.board.side_to_move == Color::WHITE ? winc : binc;
 
         time_ms = std::min(our_time / 20 + our_inc / 2, our_time);
     }
@@ -185,11 +162,6 @@ void handle_go(std::istringstream& stream)
     if (depth < 1 || depth > MAX_DEPTH)
         depth = MAX_DEPTH;
 
-    search_thread = std::thread(
-        [&]()
-        {
-            search.start_search(depth, time_ms);
-        }
-    );
+    search_thread = std::thread([depth, time_ms]() { search.start_search(depth, time_ms); });
 }
-}
+} // namespace crumb::uci

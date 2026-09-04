@@ -23,13 +23,10 @@
 #include <chrono>
 #include <iostream>
 
-namespace crumb::perft
-{
+namespace crumb::perft {
 
-void perft_divide(const Board& board, Depth depth)
-{
-    if (depth <= 0)
-    {
+void perft_divide(const Board& board, Depth depth) {
+    if (depth <= 0) {
         std::cout << "Perft depth must be more than 0\n";
         return;
     }
@@ -39,8 +36,7 @@ void perft_divide(const Board& board, Depth depth)
     MoveList moves(board);
     u64 total_nodes = 0;
 
-    for (int i = 0; i < moves.size(); ++i)
-    {
+    for (int i = 0; i < moves.size(); ++i) {
         Move move = moves[i];
 
         Board child = board;
@@ -57,25 +53,23 @@ void perft_divide(const Board& board, Depth depth)
 
     auto end = std::chrono::steady_clock::now();
 
-    int elapsed = std::max<int>(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count(), 1);
+    int elapsed = std::max<int>(
+        std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count(), 1);
 
     std::cout << "\nTotal nodes searched: " << total_nodes << '\n';
     std::cout << "Elapsed: " << elapsed << '\n';
     std::cout << "Nodes per second: " << (total_nodes * 1000 / elapsed) << '\n' << std::endl;
 }
 
-u64 perft(const Board& board, Depth depth)
-{
-    if (depth <= 0)
-    {
+u64 perft(const Board& board, Depth depth) {
+    if (depth <= 0) {
         return 1;
     }
 
     MoveList moves(board);
     u64 total_nodes = 0;
 
-    for (int i = 0; i < moves.size(); ++i)
-    {
+    for (int i = 0; i < moves.size(); ++i) {
         Move move = moves[i];
 
         Board child = board;
@@ -91,4 +85,4 @@ u64 perft(const Board& board, Depth depth)
     return total_nodes;
 }
 
-}
+} // namespace crumb::perft

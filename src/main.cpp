@@ -16,17 +16,16 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <cstdlib>
-#include <iostream>
 #include "attacks.hpp"
 #include "eval.hpp"
 #include "uci.hpp"
 #include "zobrist.hpp"
+#include <cstdlib>
+#include <iostream>
 
 using namespace crumb;
 
-int main(void)
-{
+int main(void) {
     std::cout << ENGINE_NAME << ' ' << ENGINE_VERSION << std::endl;
 
     // init
@@ -35,6 +34,6 @@ int main(void)
     eval::load_eval_tables();
 
     uci::loop();
-    
+
     return EXIT_SUCCESS;
 }

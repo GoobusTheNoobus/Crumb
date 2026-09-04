@@ -20,21 +20,20 @@
 #include "bitboard.hpp"
 #include "core.hpp"
 
-namespace crumb::eval
-{
+namespace crumb::eval {
 
-namespace
-{
+namespace {
 
 constexpr int TEMPO_BONUS = 16;
 
-constexpr int MG_PIECE_VALUES[PIECETYPE_NB] = { 82, 337, 365, 477, 1025, 0 };
-constexpr int EG_PIECE_VALUES[PIECETYPE_NB] = { 94, 281, 297, 512, 936, 0 };
+constexpr int MG_PIECE_VALUES[PIECETYPE_NB] = {82, 337, 365, 477, 1025, 0};
+constexpr int EG_PIECE_VALUES[PIECETYPE_NB] = {94, 281, 297, 512, 936, 0};
 
-constexpr int PHASE_INC[PIECETYPE_NB] = { 0, 1, 1, 2, 4, 0 };
+constexpr int PHASE_INC[PIECETYPE_NB] = {0, 1, 1, 2, 4, 0};
 
-int mg_piece_square[PIECETYPE_NB][BOARD_SIZE] = 
-{
+// clang-format off
+
+int mg_piece_square[PIECETYPE_NB][BOARD_SIZE] = {
 { // pawns
       0,   0,   0,   0,   0,   0,  0,   0,
      98, 134,  61,  95,  68, 126, 34, -11,
@@ -97,8 +96,7 @@ int mg_piece_square[PIECETYPE_NB][BOARD_SIZE] =
 }
 };
 
-int eg_piece_square[PIECETYPE_NB][BOARD_SIZE] = 
-{
+int eg_piece_square[PIECETYPE_NB][BOARD_SIZE] = {
 { // pawns
       0,   0,   0,   0,   0,   0,   0,   0,
     178, 173, 158, 134, 147, 132, 165, 187,
@@ -161,53 +159,45 @@ int eg_piece_square[PIECETYPE_NB][BOARD_SIZE] =
 }
 };
 
-}
+// clang-format on
 
-void load_eval_tables()
-{
-    for (int p = 0; p < 6; ++p)
-    {
-        for (int sq = 0; sq < 64; ++sq)
-        {
+} // namespace
+
+void load_eval_tables() {
+    for (int p = 0; p < 6; ++p) {
+        for (int sq = 0; sq < 64; ++sq) {
             mg_piece_square[p][sq] += MG_PIECE_VALUES[p];
             eg_piece_square[p][sq] += EG_PIECE_VALUES[p];
         }
     }
 }
 
-int get_phase(const u64 piece_bb[])
-{
+int get_phase(const u64 piece_bb[]) {
     int phase = 0;
-    for (int pt = 0; pt < 6; ++pt)
-    {
+    for (int pt = 0; pt < 6; ++pt) {
         phase += popcount(piece_bb[pt]) * PHASE_INC[pt];
     }
 
     return phase;
 }
 
-int mg_table(Color color, PieceType type, Square square) 
-{
-    return (color == Color::WHITE) ? 
-             mg_piece_square[(int)type][(int)flipped_square(square)] :
-            -mg_piece_square[(int)type][(int)square];
+int mg_table(Color color, PieceType type, Square square) {
+    return (color == Color::WHITE) ? mg_piece_square[(int)type][(int)flipped_square(square)]
+                                   : -mg_piece_square[(int)type][(int)square];
 }
 
-int eg_table(Color color, PieceType type, Square square) 
-{
-    return (color == Color::WHITE) ? 
-             eg_piece_square[(int)type][(int)flipped_square(square)] :
-            -eg_piece_square[(int)type][(int)square];
+int eg_table(Color color, PieceType type, Square square) {
+    return (color == Color::WHITE) ? eg_piece_square[(int)type][(int)flipped_square(square)]
+                                   : -eg_piece_square[(int)type][(int)square];
 }
 
-int evaluate(const Board& board)
-{
+int evaluate(const Board& board) {
     int phase = get_phase(board.piece_bb);
-    
+
     int material_score = (board.mg_score * phase + board.eg_score * (24 - phase)) / 24;
     material_score = board.side_to_move == Color::WHITE ? material_score : -material_score;
 
     return material_score + TEMPO_BONUS;
 }
 
-}
+} // namespace crumb::eval

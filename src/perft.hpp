@@ -19,10 +19,9 @@
 #pragma once
 
 #include "board.hpp"
-namespace crumb::perft 
-{
+namespace crumb::perft {
 
 void perft_divide(const Board& board, Depth depth);
 u64 perft(const Board& board, Depth depth);
 
-}
+} // namespace crumb::perft

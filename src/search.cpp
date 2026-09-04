@@ -22,17 +22,17 @@
 #include "eval.hpp"
 #include "move.hpp"
 #include "movelist.hpp"
+#include "ordering.hpp"
+#include "tt.hpp"
 #include <cmath>
 #include <cstdlib>
 #include <string>
 
-namespace crumb
-{
+namespace crumb {
 
-namespace
-{
-std::string score_string(Score score)
-{
+namespace {
+
+std::string score_string(Score score) {
     if (std::abs(score) <= MAX_CP_SCORE)
         return "cp " + std::to_string(score);
 
@@ -43,17 +43,13 @@ std::string score_string(Score score)
 
     return "mate " + std::to_string(mate_distance);
 }
-}
 
-void Searcher::stop_search()
-{
-    timer.stop_flag = true;
-}
+} // namespace
 
-void Searcher::start_search(Depth depth, int max_ms)
-{
-    if (is_terminal())
-    {
+void Searcher::stop_search() { timer.stop_flag = true; }
+
+void Searcher::start_search(Depth depth, int max_ms) {
+    if (is_terminal()) {
         std::cout << "info string position is terminal\n"
                   << "bestmove none" << std::endl;
         return;
@@ -68,8 +64,7 @@ void Searcher::start_search(Depth depth, int max_ms)
     Score previous_score;
 
     // iterative deepening
-    for (int current_depth = 1; current_depth <= depth; ++current_depth)
-    {
+    for (int current_depth = 1; current_depth <= depth; ++current_depth) {
         Score score = search<NodeType::ROOT>(info, board, current_depth, 0, -INF_SCORE, INF_SCORE);
 
         if (timer.should_stop())
@@ -80,18 +75,19 @@ void Searcher::start_search(Depth depth, int max_ms)
 
         int elapsed = timer.elapsed();
 
-        std::cout << "info depth " << current_depth << " score " << score_string(score) << " nodes " 
-                  << info.nodes_searched << " nps " << (info.nodes_searched * 1000 / elapsed) 
-                  << " time " << elapsed << " pv " << to_string(info.best_move )<< std::endl;
+        std::cout << "info depth " << current_depth << " score " << score_string(score) << " nodes "
+                  << info.nodes_searched << " hashfull " << tt.hashfull() << " nps "
+                  << (info.nodes_searched * 1000 / elapsed) << " time " << elapsed << " pv "
+                  << to_string(info.best_move) << std::endl;
     }
 
     std::cout << "bestmove " << to_string(previous_best_move) << std::endl;
-
+    tt.clear();
 }
 
 template <Searcher::NodeType Type>
-Score Searcher::search(Info& info, const Board& board, Depth depth, Depth plies, Score alpha, Score beta)
-{
+Score Searcher::search(Info& info, const Board& board, Depth depth, Depth plies, Score alpha,
+                       Score beta) {
     ++info.nodes_searched;
 
     if (timer.should_stop())
@@ -100,14 +96,45 @@ Score Searcher::search(Info& info, const Board& board, Depth depth, Depth plies,
     if (hashes.is_repetition(board.hash, board.halfmove_clock) || board.halfmove_clock >= 100)
         return DRAW_SCORE;
 
-    if (depth <= 0 && Type != NodeType::ROOT)
-    {
+    if (depth <= 0 && Type != NodeType::ROOT) {
         return qsearch(info, board, plies + 1, alpha, beta);
     }
 
     info.seldepth = std::max(info.seldepth, plies);
 
-    MoveList moves(board);
+    Score original_alpha = alpha;
+
+    // tt probe
+
+    auto entry = tt.probe(board.hash);
+    Move tt_move = 0;
+    if (entry && entry->full_key == board.hash) {
+        tt_move = entry->best_move;
+
+        if (entry->depth >= depth && Type == NodeType::NON_ROOT) {
+            Score tt_score = entry->score;
+
+            if (tt_score > MAX_CP_SCORE)
+                tt_score -= plies;
+            else if (tt_score < MIN_CP_SCORE)
+                tt_score += plies;
+
+            if (Type == NodeType::NON_ROOT && entry->flag == TTFlag::EXACT)
+                return tt_score;
+
+            if (entry->flag == TTFlag::LOWERBOUND)
+                alpha = std::max<Score>(alpha, tt_score);
+
+            if (entry->flag == TTFlag::UPPERBOUND)
+                beta = std::min(beta, tt_score);
+
+            if (alpha >= beta)
+                return tt_score;
+        }
+    }
+
+    TTFlag store_flag;
+    OrderingMoveList moves(board, tt_move);
 
     hashes.hashes[hashes.count++] = board.hash;
 
@@ -115,13 +142,13 @@ Score Searcher::search(Info& info, const Board& board, Depth depth, Depth plies,
     Move best_move = 0;
     int move_count = 0;
 
-    for (int i = 0; i < moves.size(); ++i)
-    {
+    int i = 0;
+    while (moves.next(i)) {
         Move move = moves[i];
+        ++i;
 
         Board child = board;
-        if (!child.try_move(move))
-        {
+        if (!child.try_move(move)) {
             continue;
         }
 
@@ -129,33 +156,45 @@ Score Searcher::search(Info& info, const Board& board, Depth depth, Depth plies,
 
         Score score = -search<NodeType::NON_ROOT>(info, child, depth - 1, plies + 1, -beta, -alpha);
 
-        if (score > best_score)
-        {
+        if (score > best_score) {
             best_score = score;
             best_move = move;
         }
 
         alpha = std::max(best_score, alpha);
 
-        if (alpha > beta)
+        if (alpha >= beta)
             break;
     }
 
     hashes.count--;
 
-    if (move_count == 0)
-    {
+    if (move_count == 0) {
         return (board.is_in_check() ? -MATE_SCORE + plies + 1 : DRAW_SCORE);
     }
 
     if (Type == NodeType::ROOT)
         info.best_move = best_move;
 
+    Score store_score = best_score;
+    if (best_score > MAX_CP_SCORE)
+        store_score += plies;
+    if (best_score < MIN_CP_SCORE)
+        store_score -= plies;
+
+    if (best_score <= original_alpha)
+        store_flag = TTFlag::UPPERBOUND;
+    else if (best_score >= beta)
+        store_flag = TTFlag::LOWERBOUND;
+    else
+        store_flag = TTFlag::EXACT;
+
+    tt.store(TranspositionEntry{board.hash, best_move, store_score, depth, store_flag});
+
     return best_score;
 }
 
-Score Searcher::qsearch(Info &info, const Board& board, Depth plies, Score alpha, Score beta)
-{
+Score Searcher::qsearch(Info& info, const Board& board, Depth plies, Score alpha, Score beta) {
     ++info.nodes_searched;
 
     if (timer.should_stop())
@@ -177,8 +216,7 @@ Score Searcher::qsearch(Info &info, const Board& board, Depth plies, Score alpha
     MoveList moves(board);
     hashes.hashes[hashes.count++] = board.hash;
 
-    for (int i = 0; i < moves.size(); ++i)
-    {
+    for (int i = 0; i < moves.size(); ++i) {
         Move move = moves[i];
 
         bool search_move = in_check || is_noisy(board, move);
@@ -203,11 +241,9 @@ Score Searcher::qsearch(Info &info, const Board& board, Depth plies, Score alpha
     return alpha;
 }
 
-bool Searcher::is_terminal() const
-{
+bool Searcher::is_terminal() const {
     MoveList moves(board);
-    for (int i = 0; i < moves.size(); ++i)
-    {
+    for (int i = 0; i < moves.size(); ++i) {
         Board child = board;
         if (child.try_move(moves[i]))
             return false;
@@ -216,9 +252,9 @@ bool Searcher::is_terminal() const
     return true;
 }
 
-bool Searcher::is_noisy(const Board& board, Move move) const
-{
-    return move_flag(move) >= MoveFlag::EN_PASSANT || board.mailbox[(int)move_to(move)] != Piece::NONE;
+bool Searcher::is_noisy(const Board& board, Move move) const {
+    return move_flag(move) >= MoveFlag::EN_PASSANT ||
+           board.mailbox[(int)move_to(move)] != Piece::NONE;
 }
 
-}
+} // namespace crumb

@@ -18,24 +18,23 @@
 
 #pragma once
 #include <cassert>
+#include <chrono>
 #include <cstdint>
 #include <iostream>
 #include <string>
-#include <chrono>
 
-namespace crumb
-{
+namespace crumb {
 // define type aliases because c++ types are ugly af
 
 using u64 = uint64_t;
 using u32 = uint32_t;
 using u16 = uint16_t;
-using u8  = uint8_t;
+using u8 = uint8_t;
 
 using i64 = int64_t;
 using i32 = int32_t;
 using i16 = int16_t;
-using i8  = int8_t;
+using i8 = int8_t;
 
 using usize = size_t;
 
@@ -43,8 +42,9 @@ using usize = size_t;
 
 constexpr int BOARD_WIDTH = 8, BOARD_HEIGHT = 8, BOARD_SIZE = BOARD_WIDTH * BOARD_HEIGHT;
 
-enum class Square : u8
-{
+// clang-format off
+
+enum class Square : u8 {
     A1, B1, C1, D1, E1, F1, G1, H1,
     A2, B2, C2, D2, E2, F2, G2, H2,
     A3, B3, C3, D3, E3, F3, G3, H3,
@@ -57,32 +57,20 @@ enum class Square : u8
     NONE,
 };
 
+// clang-format on
+
 // helpers for square & file & rank
 
-[[nodiscard]] constexpr Square flipped_square(Square square)
-{
-    return (Square)((int)square ^ 56);
-}
+[[nodiscard]] constexpr Square flipped_square(Square square) { return (Square)((int)square ^ 56); }
 
-[[nodiscard]] constexpr Square make_square(int rank, int file)
-{
-    return (Square)(rank * 8 + file);
-}
+[[nodiscard]] constexpr Square make_square(int rank, int file) { return (Square)(rank * 8 + file); }
 
-[[nodiscard]] constexpr int rank_of(Square squ)
-{
-    return (int)squ / 8;
-}
+[[nodiscard]] constexpr int rank_of(Square squ) { return (int)squ / 8; }
 
-[[nodiscard]] constexpr int file_of(Square squ)
-{
-    return (int)squ % 8;
-}
+[[nodiscard]] constexpr int file_of(Square squ) { return (int)squ % 8; }
 
-[[nodiscard]] inline std::string algebraic(Square squ)
-{
-    if (squ == Square::NONE)
-    {
+[[nodiscard]] inline std::string algebraic(Square squ) {
+    if (squ == Square::NONE) {
         return "none ";
     }
 
@@ -92,8 +80,7 @@ enum class Square : u8
     return {(char)(file + 'a'), (char)(rank + '1')};
 }
 
-[[nodiscard]] inline Square make_square(const std::string& str)
-{
+[[nodiscard]] inline Square make_square(const std::string& str) {
     if (str.size() != 2)
         return Square::NONE;
 
@@ -107,82 +94,98 @@ enum class Square : u8
 
 constexpr int COLOR_NB = 2, PIECETYPE_NB = 6, PIECE_NB = COLOR_NB * PIECETYPE_NB;
 
-enum class Piece : u8 
-{
-    WHITE_PAWN, WHITE_KNIGHT, WHITE_BISHOP, WHITE_ROOK, WHITE_QUEEN, WHITE_KING,
-    BLACK_PAWN, BLACK_KNIGHT, BLACK_BISHOP, BLACK_ROOK, BLACK_QUEEN, BLACK_KING,
+enum class Piece : u8 {
+    WHITE_PAWN,
+    WHITE_KNIGHT,
+    WHITE_BISHOP,
+    WHITE_ROOK,
+    WHITE_QUEEN,
+    WHITE_KING,
+    BLACK_PAWN,
+    BLACK_KNIGHT,
+    BLACK_BISHOP,
+    BLACK_ROOK,
+    BLACK_QUEEN,
+    BLACK_KING,
     NONE,
 };
 
-enum class PieceType : u8
-{
-    PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING
-};
+enum class PieceType : u8 { PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING };
 
-enum class Color : u8 
-{
-    WHITE, BLACK
-};
+enum class Color : u8 { WHITE, BLACK };
 
 // helpers for piece and color
 
-[[nodiscard]] constexpr Piece make_piece(PieceType type, Color color)
-{
+[[nodiscard]] constexpr Piece make_piece(PieceType type, Color color) {
     return (Piece)((int)type + (int)color * 6);
 }
 
-[[nodiscard]] constexpr PieceType type_of(Piece piece)
-{
-    return (PieceType)((int)piece % 6);
-}
+[[nodiscard]] constexpr PieceType type_of(Piece piece) { return (PieceType)((int)piece % 6); }
 
-[[nodiscard]] constexpr Color color_of(Piece piece)
-{
-    return (Color)((int)piece / 6);
-}
+[[nodiscard]] constexpr Color color_of(Piece piece) { return (Color)((int)piece / 6); }
 
-[[nodiscard]] constexpr Color opposite(Color color)
-{
-    return (Color)((int)color ^ 0x1);
-}
+[[nodiscard]] constexpr Color opposite(Color color) { return (Color)((int)color ^ 0x1); }
 
-[[nodiscard]] constexpr char piece_char(Piece piece)
-{
-    switch (piece) 
-    {
-        case Piece::WHITE_PAWN:         return 'P';
-        case Piece::WHITE_KNIGHT:       return 'N';
-        case Piece::WHITE_BISHOP:       return 'B';
-        case Piece::WHITE_ROOK:         return 'R';
-        case Piece::WHITE_QUEEN:        return 'Q';
-        case Piece::WHITE_KING:         return 'K';
-        case Piece::BLACK_PAWN:         return 'p';
-        case Piece::BLACK_KNIGHT:       return 'n';
-        case Piece::BLACK_BISHOP:       return 'b';
-        case Piece::BLACK_ROOK:         return 'r';
-        case Piece::BLACK_QUEEN:        return 'q';
-        case Piece::BLACK_KING:         return 'k';
-        default:                        return '*';
+[[nodiscard]] constexpr char piece_char(Piece piece) {
+    switch (piece) {
+    case Piece::WHITE_PAWN:
+        return 'P';
+    case Piece::WHITE_KNIGHT:
+        return 'N';
+    case Piece::WHITE_BISHOP:
+        return 'B';
+    case Piece::WHITE_ROOK:
+        return 'R';
+    case Piece::WHITE_QUEEN:
+        return 'Q';
+    case Piece::WHITE_KING:
+        return 'K';
+    case Piece::BLACK_PAWN:
+        return 'p';
+    case Piece::BLACK_KNIGHT:
+        return 'n';
+    case Piece::BLACK_BISHOP:
+        return 'b';
+    case Piece::BLACK_ROOK:
+        return 'r';
+    case Piece::BLACK_QUEEN:
+        return 'q';
+    case Piece::BLACK_KING:
+        return 'k';
+    default:
+        return '*';
     }
 }
 
-[[nodiscard]] constexpr Piece char_to_piece(char c)
-{
-    switch (c) 
-    {
-        case 'P':  return Piece::WHITE_PAWN;
-        case 'N':  return Piece::WHITE_KNIGHT;
-        case 'B':  return Piece::WHITE_BISHOP;
-        case 'R':  return Piece::WHITE_ROOK;
-        case 'Q':  return Piece::WHITE_QUEEN;
-        case 'K':  return Piece::WHITE_KING;
-        case 'p':  return Piece::BLACK_PAWN;
-        case 'n':  return Piece::BLACK_KNIGHT;
-        case 'b':  return Piece::BLACK_BISHOP;
-        case 'r':  return Piece::BLACK_ROOK;
-        case 'q':  return Piece::BLACK_QUEEN;
-        case 'k':  return Piece::BLACK_KING;
-        default:   std::cout << c << std::endl; return Piece::NONE;
+[[nodiscard]] constexpr Piece char_to_piece(char c) {
+    switch (c) {
+    case 'P':
+        return Piece::WHITE_PAWN;
+    case 'N':
+        return Piece::WHITE_KNIGHT;
+    case 'B':
+        return Piece::WHITE_BISHOP;
+    case 'R':
+        return Piece::WHITE_ROOK;
+    case 'Q':
+        return Piece::WHITE_QUEEN;
+    case 'K':
+        return Piece::WHITE_KING;
+    case 'p':
+        return Piece::BLACK_PAWN;
+    case 'n':
+        return Piece::BLACK_KNIGHT;
+    case 'b':
+        return Piece::BLACK_BISHOP;
+    case 'r':
+        return Piece::BLACK_ROOK;
+    case 'q':
+        return Piece::BLACK_QUEEN;
+    case 'k':
+        return Piece::BLACK_KING;
+    default:
+        std::cout << c << std::endl;
+        return Piece::NONE;
     }
 }
 
@@ -197,14 +200,13 @@ using TimePoint = SteadyClock::time_point;
 
 // constants
 
-constexpr Score MIN_CP_SCORE        = -100'00;
-constexpr Score MAX_CP_SCORE        = 100'00;
-constexpr Score MATE_SCORE          = 200'00;
-constexpr Score INF_SCORE           = 300'00;
-constexpr Score DRAW_SCORE          = 0;
+constexpr Score MIN_CP_SCORE = -100'00;
+constexpr Score MAX_CP_SCORE = 100'00;
+constexpr Score MATE_SCORE = 200'00;
+constexpr Score INF_SCORE = 300'00;
+constexpr Score DRAW_SCORE = 0;
 
-constexpr Depth MAX_DEPTH           = 100;
-constexpr Depth MIN_DEPTH           = 0;
+constexpr Depth MAX_DEPTH = 100;
+constexpr Depth MIN_DEPTH = 0;
 
-}
-
+} // namespace crumb

@@ -6,7 +6,7 @@ Crumb is a UCI chess engine written in C++. The reason it is named "crumb" is be
 its skill level is about the same as that of a bread crumb. 
 
 ## Status
-Version: 0.1.0
+Version: 0.1.2
 Elo: ???
 Language: C++20
 
@@ -22,6 +22,16 @@ As of the current version, here are all the features:
     * Alpha-beta (version 0.1.0)
     * Iterative deepening (version 0.1.0)
     * Quiescence search (version 0.1.1)
+    * Transposition Table (version 0.1.2)
+    * Move Ordering (version 0.1.2)
 * Evaluation
     * PeSTO Evaluation (version 0.1.0)
     * Tempo bonus (version 0.1.0)
+
+## Elo Progression
+
+| Version | Elo    |
+|---------|--------|
+| 0.1.0   | ???    |
+| 0.1.1   | ???    |
+| 0.1.2   | 1857   |

@@ -24,40 +24,29 @@
 #include "movegen.hpp"
 #include <ostream>
 
-namespace crumb
-{
-class MoveList
-{
-    public:
-    MoveList(const Board& board) 
-    {
+namespace crumb {
+class MoveList {
+public:
+    MoveList(const Board& board) {
         MoveGenerator generator;
         count = generator.generate_moves(board, data);
     }
 
-    inline Move operator[](int i) const
-    {
-        return data[i];
-    }
+    inline Move operator[](int i) const { return data[i]; }
 
-    inline usize size() const
-    {
-        return count;
-    }
+    inline usize size() const { return count; }
 
-    private:
+private:
     Move data[256];
     usize count;
 };
 
-inline std::ostream& operator<<(std::ostream& os, const MoveList& list)
-{
-    for (int i = 0; i < list.size(); ++i)
-    {
-        os << to_string(list[i])<< std::endl;
+inline std::ostream& operator<<(std::ostream& os, const MoveList& list) {
+    for (int i = 0; i < list.size(); ++i) {
+        os << to_string(list[i]) << std::endl;
     }
 
     os << "\nsize: " << list.size() << std::endl;
     return os;
 }
-}
+} // namespace crumb

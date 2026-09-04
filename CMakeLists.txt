@@ -29,7 +29,9 @@ add_executable(crumb
     src/movegen.cpp 
     src/perft.cpp
     src/search.cpp
+    src/tt.cpp
     src/uci.cpp
+    src/ordering.cpp
 )
 
 target_include_directories(crumb PRIVATE src)

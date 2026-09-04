@@ -19,43 +19,23 @@
 #pragma once
 
 #include "core.hpp"
-namespace crumb
-{
-    
-constexpr u64 square_mask(Square sq)
-{
-    return 1ULL << (int)sq;
-}
+namespace crumb {
 
-constexpr u64 file_mask(int file)
-{
-    return 0x0101010101010101ULL << file;
-}
+constexpr u64 square_mask(Square sq) { return 1ULL << (int)sq; }
 
-constexpr u64 rank_mask(int rank)
-{
-    return 0xFFULL << (rank * 8);
-}
+constexpr u64 file_mask(int file) { return 0x0101010101010101ULL << file; }
 
-constexpr bool is_occupied(u64 bb, Square sq)
-{
-    return square_mask(sq) & bb;
-}
+constexpr u64 rank_mask(int rank) { return 0xFFULL << (rank * 8); }
 
-constexpr int trailing_zero(u64 bb) 
-{
-    return std::__countr_zero(bb);
-}
+constexpr bool is_occupied(u64 bb, Square sq) { return square_mask(sq) & bb; }
 
-constexpr int popcount(u64 bb)
-{
-    return std::__popcount(bb);
-}
+constexpr int trailing_zero(u64 bb) { return std::__countr_zero(bb); }
 
-inline int pop_lsb(u64& bb)
-{
+constexpr int popcount(u64 bb) { return std::__popcount(bb); }
+
+inline int pop_lsb(u64& bb) {
     int tz = trailing_zero(bb);
     bb &= bb - 1;
     return tz;
 }
-}
+} // namespace crumb
