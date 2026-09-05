@@ -74,6 +74,8 @@ private:
     bool is_terminal() const;
 
     static constexpr Score RFP_BASE = 150;
+    static constexpr Score ASPIR_WINDOW = 50;
+    static constexpr Score ASPIR_EXPANSION = 3;
 };
 
 } // namespace crumb

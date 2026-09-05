@@ -48,7 +48,7 @@ std::string score_string(Score score) {
 
 void Searcher::stop_search() { timer.stop_flag = true; }
 
-void Searcher::start_search(Depth depth, int max_ms) {
+void Searcher::start_search(Depth max_depth, int max_ms) {
     if (is_terminal()) {
         std::cout << "info string position is terminal\n"
                   << "bestmove none" << std::endl;
@@ -64,8 +64,38 @@ void Searcher::start_search(Depth depth, int max_ms) {
     Score previous_score;
 
     // iterative deepening
-    for (int current_depth = 1; current_depth <= depth; ++current_depth) {
-        Score score = search<NodeType::ROOT>(info, board, current_depth, 0, -INF_SCORE, INF_SCORE);
+    for (int depth = 1; depth <= max_depth; ++depth) {
+        Score score;
+        if (depth == 1)
+            score = search<NodeType::ROOT>(info, board, depth, 0, -INF_SCORE, INF_SCORE);
+        else {
+            Score delta = ASPIR_WINDOW;
+
+            Score alpha = previous_score - delta;
+            Score beta = previous_score + delta;
+
+            while (true) {
+                score = search<NodeType::ROOT>(info, board, depth, 0, alpha, beta);
+
+                if (timer.should_stop())
+                    break;
+
+                if (score <= alpha) {
+                    alpha -= delta;
+                    delta *= ASPIR_EXPANSION;
+                    continue;
+                }
+
+                if (score >= beta) {
+                    beta += delta;
+                    delta *= ASPIR_EXPANSION;
+
+                    continue;
+                }
+
+                break;
+            }
+        }
 
         if (timer.should_stop())
             break;
@@ -75,11 +105,10 @@ void Searcher::start_search(Depth depth, int max_ms) {
 
         int elapsed = timer.elapsed();
 
-        std::cout << "info depth " << current_depth << " seldepth " << (int)info.seldepth
-                  << " score " << score_string(score) << " nodes " << info.nodes_searched
-                  << " hashfull " << tt.hashfull() << " nps "
-                  << (info.nodes_searched * 1000 / elapsed) << " time " << elapsed << " pv "
-                  << to_string(info.best_move) << std::endl;
+        std::cout << "info depth " << depth << " seldepth " << (int)info.seldepth << " score "
+                  << score_string(score) << " nodes " << info.nodes_searched << " hashfull "
+                  << tt.hashfull() << " nps " << (info.nodes_searched * 1000 / elapsed) << " time "
+                  << elapsed << " pv " << to_string(info.best_move) << std::endl;
     }
 
     std::cout << "bestmove " << to_string(previous_best_move) << std::endl;
@@ -162,7 +191,7 @@ Score Searcher::search(Info& info, const Board& board, Depth depth, Depth plies,
 
         ++move_count;
 
-        if (Type == NodeType::ROOT && timer.elapsed() > 1000) {
+        if (Type == NodeType::ROOT && timer.elapsed() > 1000 && !timer.should_stop()) {
             std::cout << "info currmovenumber " << move_count << " currmove " << to_string(move)
                       << " nodes " << info.nodes_searched << " time " << timer.elapsed() << " nps "
                       << (info.nodes_searched * 1000 / timer.elapsed()) << std::endl;
