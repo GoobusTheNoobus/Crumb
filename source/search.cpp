@@ -134,7 +134,14 @@ Score Searcher::search(Info& info, const Board& board, Depth depth, Depth plies,
         }
     }
 
-    TTFlag store_flag;
+    Score static_eval = eval::evaluate(board);
+    Score margin = RFP_BASE * depth;
+
+    bool in_check = board.is_in_check();
+
+    if (!in_check && Type == NodeType::NON_PV && static_eval >= beta + margin)
+        return static_eval;
+
     OrderingMoveList moves(board, tt_move);
 
     hashes.hashes[hashes.count++] = board.hash;
@@ -196,6 +203,8 @@ Score Searcher::search(Info& info, const Board& board, Depth depth, Depth plies,
         store_score += plies;
     if (best_score < MIN_CP_SCORE)
         store_score -= plies;
+
+    TTFlag store_flag;
 
     if (best_score <= original_alpha)
         store_flag = TTFlag::UPPERBOUND;

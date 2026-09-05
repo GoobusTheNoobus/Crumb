@@ -25,6 +25,7 @@ As of the current version, here are all the features:
     * Transposition Table (version 0.1.2)
     * Move Ordering (version 0.1.2)
     * Principle Variation Search (version 0.1.3)
+    * Reverse Futility Pruning (version 0.1.3)
 * Evaluation
     * PeSTO Evaluation (version 0.1.0)
     * Tempo bonus (version 0.1.0)

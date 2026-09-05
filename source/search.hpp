@@ -72,6 +72,8 @@ private:
 
     bool is_noisy(const Board&, Move) const;
     bool is_terminal() const;
+
+    static constexpr Score RFP_BASE = 150;
 };
 
 } // namespace crumb
