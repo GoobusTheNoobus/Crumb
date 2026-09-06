@@ -65,6 +65,8 @@ void Searcher::start_search(Depth max_depth, int max_ms) {
 
     // iterative deepening
     for (int depth = 1; depth <= max_depth; ++depth) {
+
+        // aspiration window
         Score score;
         if (depth == 1)
             score = search<NodeType::ROOT>(info, board, depth, 0, -INF_SCORE, INF_SCORE);
@@ -97,6 +99,7 @@ void Searcher::start_search(Depth max_depth, int max_ms) {
             }
         }
 
+        // we make sure the score is valid before assigning to previous_best_move
         if (timer.should_stop())
             break;
 
@@ -105,6 +108,7 @@ void Searcher::start_search(Depth max_depth, int max_ms) {
 
         int elapsed = timer.elapsed();
 
+        // report uci info
         std::cout << "info depth " << depth << " seldepth " << (int)info.seldepth << " score "
                   << score_string(score) << " nodes " << info.nodes_searched << " hashfull "
                   << tt.hashfull() << " nps " << (info.nodes_searched * 1000 / elapsed) << " time "
@@ -118,14 +122,15 @@ void Searcher::start_search(Depth max_depth, int max_ms) {
 template <Searcher::NodeType Type>
 Score Searcher::search(Info& info, const Board& board, Depth depth, Depth plies, Score alpha,
                        Score beta) {
-    ++info.nodes_searched;
-
     if (timer.should_stop())
         return 0;
+    ++info.nodes_searched;
 
+    // 3-fold repetition and rule 50
     if (hashes.is_repetition(board.hash, board.halfmove_clock) || board.halfmove_clock >= 100)
         return DRAW_SCORE;
 
+    // leaf node
     if (depth <= 0 && Type != NodeType::ROOT) {
         return qsearch(info, board, plies + 1, alpha, beta);
     }
@@ -139,11 +144,17 @@ Score Searcher::search(Info& info, const Board& board, Depth depth, Depth plies,
     auto entry = tt.probe(board.hash);
     Move tt_move = 0;
     if (entry && entry->full_key == board.hash) {
+
+        // we use the tt_move regardless for ordering
         tt_move = entry->best_move;
 
+        // we use the score and stuff if the probe depth is higher than the depth we will search,
+        // and we are in a NON_PV node
         if (entry->depth >= depth && Type == NodeType::NON_PV) {
             Score tt_score = entry->score;
 
+            // tt scores that are mate-in-n are adjusted to mate in n from the perspective of that
+            // position, but we require a mate-in-n relative to the root position we are searching
             if (tt_score > MAX_CP_SCORE)
                 tt_score -= plies;
             else if (tt_score < MIN_CP_SCORE)
@@ -153,7 +164,7 @@ Score Searcher::search(Info& info, const Board& board, Depth depth, Depth plies,
                 return tt_score;
 
             if (entry->flag == TTFlag::LOWERBOUND)
-                alpha = std::max<Score>(alpha, tt_score);
+                alpha = std::max(alpha, tt_score);
 
             if (entry->flag == TTFlag::UPPERBOUND)
                 beta = std::min(beta, tt_score);
@@ -164,16 +175,38 @@ Score Searcher::search(Info& info, const Board& board, Depth depth, Depth plies,
     }
 
     Score static_eval = eval::evaluate(board);
-    Score margin = RFP_BASE * depth;
-
     bool in_check = board.is_in_check();
 
+    // reverse futility pruning
+    // if the static eval is already a good amount above beta, we return that
+    // the higher the search depth, the higher the static eval has to be above beta to do this
+    Score margin = RFP_BASE * depth;
     if (!in_check && Type == NodeType::NON_PV && static_eval >= beta + margin)
         return static_eval;
 
-    OrderingMoveList moves(board, tt_move);
+    // null move pruning
+    // try passing the turn to the opponent, if the position still produce a cutoff, we assume the
+    // current side's position is strong enough to return, since passing the move is usually
+    // worsening the position
+    // we check if the board has non-pawn materials to avoid zugswang
+    if (Type == NodeType::NON_PV && !in_check && board.has_non_pawn_material() &&
+        static_eval > beta + NMP_EVAL_MARGIN && depth >= NMP_MIN_DEPTH) {
+        Board null_board = board;
+        null_board.make_null();
 
-    hashes.hashes[hashes.count++] = board.hash;
+        Score score = -search<NodeType::NON_PV>(info, null_board, depth - NMP_REDUCTION, plies + 1,
+                                                -beta, -beta + 1);
+
+        if (score >= beta) {
+            return score;
+        }
+    }
+
+    // generate moves, then score them on how likely they are to be good
+    // for example, captures and promotions are usually better than quiet moves
+    // we search them first so cutoffs are more likely
+    OrderingMoveList moves(board, tt_move);
+    hashes.push_hash(board.hash);
 
     Score best_score = -INF_SCORE;
     Move best_move = 0;
@@ -185,17 +218,24 @@ Score Searcher::search(Info& info, const Board& board, Depth depth, Depth plies,
         ++i;
 
         Board child = board;
-        if (!child.try_move(move)) {
+        bool is_legal = child.try_move(move);
+        if (!is_legal) {
             continue;
         }
 
         ++move_count;
 
+        // log info currmove
         if (Type == NodeType::ROOT && timer.elapsed() > 1000 && !timer.should_stop()) {
             std::cout << "info currmovenumber " << move_count << " currmove " << to_string(move)
                       << " nodes " << info.nodes_searched << " time " << timer.elapsed() << " nps "
                       << (info.nodes_searched * 1000 / timer.elapsed()) << std::endl;
         }
+
+        // principle variation search:
+        // we search the first move with full window, then search remaining moves with null winow
+        // (-alpha - 1 as opposed to -beta)
+        // if that move is cutoff, we
 
         Score score;
         if (Type == NodeType::NON_PV || move_count > 1) {
@@ -218,14 +258,19 @@ Score Searcher::search(Info& info, const Board& board, Depth depth, Depth plies,
             break;
     }
 
-    hashes.count--;
+    hashes.pop_hash();
 
+    // no legal moves means its checkmate or draw
+    // if we are in check, the score is mate-in-plies, otherwise DRAW_SCORE which is 0
     if (move_count == 0) {
         return (board.is_in_check() ? -MATE_SCORE + plies + 1 : DRAW_SCORE);
     }
 
     if (Type == NodeType::ROOT)
         info.best_move = best_move;
+
+    // just like what we did earlier in the tt probe
+    // store_score must be relative to the current position, not the
 
     Score store_score = best_score;
     if (best_score > MAX_CP_SCORE)
@@ -247,6 +292,7 @@ Score Searcher::search(Info& info, const Board& board, Depth depth, Depth plies,
     return best_score;
 }
 
+// search until the position is quiet or the static eval is more than beta
 Score Searcher::qsearch(Info& info, const Board& board, Depth plies, Score alpha, Score beta) {
     ++info.nodes_searched;
 

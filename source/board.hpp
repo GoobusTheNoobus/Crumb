@@ -37,6 +37,9 @@ struct HashStack {
     usize count = 0;
 
     bool is_repetition(u64 current, u8 rule50) const;
+
+    void push_hash(u64 hash);
+    void pop_hash();
 };
 
 struct Board {
@@ -52,10 +55,13 @@ struct Board {
     void make_move(Move);
     bool try_move(Move);
 
-    std::optional<Move> parse(const std::string&);
+    std::optional<Move> parse(const std::string&) const;
 
     void clear_square(Square square);
     void place_piece(Square square, Piece piece);
+
+    bool has_non_pawn_material() const;
+    void make_null();
 
     Piece mailbox[BOARD_SIZE];
 

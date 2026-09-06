@@ -24,11 +24,11 @@ namespace crumb::attacks {
 
 namespace {
 
-constexpr int BISHOP_TABLE_SIZE = 5248, ROOK_TABLE_SIZE = 102400;
-
 u64 pawn_attacks[COLOR_NB][BOARD_SIZE];
 u64 knight_attacks[BOARD_SIZE];
 u64 king_attacks[BOARD_SIZE];
+
+constexpr int BISHOP_TABLE_SIZE = 5248, ROOK_TABLE_SIZE = 102400;
 
 u64 bishop_attacks[BISHOP_TABLE_SIZE];
 u64 rook_attacks[ROOK_TABLE_SIZE];

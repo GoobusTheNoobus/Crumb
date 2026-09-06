@@ -366,6 +366,36 @@ bool Board::try_move(Move move) {
     return true;
 }
 
+std::optional<Move> Board::parse(const std::string& str) const {
+    MoveList moves(*this);
+
+    for (int i = 0; i < moves.size(); ++i) {
+        if (to_string(moves[i]) == str) {
+            Board copy = *this;
+            if (copy.try_move(moves[i]))
+                return moves[i];
+            else
+                return std::nullopt;
+        }
+    }
+
+    return std::nullopt;
+}
+
+bool Board::has_non_pawn_material() const {
+
+    u64 our_pawns = piece_bb[(int)PieceType::PAWN] & color_bb[(int)side_to_move];
+    u64 our_king = piece_bb[(int)PieceType::KING] & color_bb[(int)side_to_move];
+
+    return (occ & ~our_pawns & ~our_king) != 0;
+}
+
+void Board::make_null() {
+    side_to_move = opposite(side_to_move);
+    hash ^= zobrist::black_to_move;
+    ep_square = Square::NONE;
+}
+
 bool HashStack::is_repetition(u64 current, u8 rule50) const {
     if (count < 2)
         return false;
@@ -386,19 +416,6 @@ bool HashStack::is_repetition(u64 current, u8 rule50) const {
     return false;
 }
 
-std::optional<Move> Board::parse(const std::string& str) {
-    MoveList moves(*this);
-
-    for (int i = 0; i < moves.size(); ++i) {
-        if (to_string(moves[i]) == str) {
-            Board copy = *this;
-            if (copy.try_move(moves[i]))
-                return moves[i];
-            else
-                return std::nullopt;
-        }
-    }
-
-    return std::nullopt;
-}
+void HashStack::push_hash(u64 hash) { hashes[count++] = hash; }
+void HashStack::pop_hash() { --count; }
 } // namespace crumb

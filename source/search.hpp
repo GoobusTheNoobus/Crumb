@@ -76,6 +76,9 @@ private:
     static constexpr Score RFP_BASE = 150;
     static constexpr Score ASPIR_WINDOW = 50;
     static constexpr Score ASPIR_EXPANSION = 3;
+    static constexpr Score NMP_EVAL_MARGIN = 200;
+    static constexpr Score NMP_MIN_DEPTH = 3;
+    static constexpr Score NMP_REDUCTION = 2;
 };
 
 } // namespace crumb
