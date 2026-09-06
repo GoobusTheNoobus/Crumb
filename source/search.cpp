@@ -237,10 +237,18 @@ Score Searcher::search(Info& info, const Board& board, Depth depth, Depth plies,
         // (-alpha - 1 as opposed to -beta)
         // if that move is cutoff, we
 
+        Score null_alpha = -alpha - 1;
+
         Score score;
-        if (Type == NodeType::NON_PV || move_count > 1) {
+        if (depth > LMR_MIN_DEPTH && Type == NodeType::NON_PV && move_count > 5) {
+            int reduction = is_noisy(board, move)
+                                ? 0.2 + std::log(depth) * std::log(move_count) / 3.35
+                                : 1 + std::log(depth) * std::log(move_count) / 2.5;
+            score = -search<NodeType::NON_PV>(info, child, depth - 1 - reduction, plies + 1,
+                                              null_alpha, -alpha);
+        } else if (Type == NodeType::NON_PV || move_count > 1) {
             score =
-                -search<NodeType::NON_PV>(info, child, depth - 1, plies + 1, -alpha - 1, -alpha);
+                -search<NodeType::NON_PV>(info, child, depth - 1, plies + 1, null_alpha, -alpha);
         }
 
         if (Type != NodeType::NON_PV && (move_count == 1 || score > alpha)) {

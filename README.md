@@ -28,6 +28,7 @@ As of the current version, here are all the features:
     * Reverse Futility Pruning (version 0.1.3)
     * Aspiration Window (version 0.1.3)
     * Null Move Pruning (version 0.1.4)
+    * Late Move Reduction (version 0.1.4)
 * Evaluation
     * PeSTO Evaluation (version 0.1.0)
     * Tempo bonus (version 0.1.0)

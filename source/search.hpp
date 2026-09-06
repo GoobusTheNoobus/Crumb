@@ -79,6 +79,7 @@ private:
     static constexpr Score NMP_EVAL_MARGIN = 200;
     static constexpr Score NMP_MIN_DEPTH = 3;
     static constexpr Score NMP_REDUCTION = 2;
+    static constexpr Score LMR_MIN_DEPTH = 3;
 };
 
 } // namespace crumb
