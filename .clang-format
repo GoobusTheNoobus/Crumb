@@ -1,0 +1,7 @@
+BasedOnStyle: LLVM
+ColumnLimit: 120
+IndentWidth: 4
+PointerAlignment: Left
+AlignConsecutiveAssignments: Consecutive
+AccessModifierOffset: -4
+AllowShortFunctionsOnASingleLine: None
