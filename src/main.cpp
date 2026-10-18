@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 
+#include "crumb/attacks.hpp"
 #include <iostream>
 
 #define VERSION "0.1.0"
@@ -27,4 +28,5 @@
 
 int main() {
     std::cout << "Crumb v" VERSION " by " AUTHOR "\n";
+    crumb::attacks::init_attacks();
 }
