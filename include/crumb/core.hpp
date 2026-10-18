@@ -62,6 +62,8 @@ enum class Square : u8 {
     None,
 };
 
+inline constexpr i32 FileA = 0, FileH = 7;
+
 // clang-format on
 inline constexpr i32 BoardHeight = 8, BoardWidth = 8, BoardSize = 64;
 

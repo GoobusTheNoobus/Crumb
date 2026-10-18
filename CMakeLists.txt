@@ -5,27 +5,29 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-add_executable(crumb 
+add_executable(crumb
     src/main.cpp
-    src/board.cpp 
-    
-    include/crumb/bitboard.hpp 
+    src/board.cpp
+
+    include/crumb/bitboard.hpp
     include/crumb/board.hpp
     include/crumb/core.hpp
+    include/crumb/attacks.hpp
+    src/attacks.cpp
 )
 
 target_include_directories(crumb PRIVATE include)
 
 target_compile_options(crumb PRIVATE
     $<$<CONFIG:Debug>:
-        -O0
-        -g
-        -fsanitize=address,undefined
+    -O0
+    -g
+    -fsanitize=address,undefined
     >
     $<$<CONFIG:Release>:
-        -O3
-        -march=native
-        -flto
+    -O3
+    -march=native
+    -flto
     >
     -Wall
     -Wextra
@@ -34,9 +36,9 @@ target_compile_options(crumb PRIVATE
 
 target_link_options(crumb PUBLIC
     $<$<CONFIG:Debug>:
-        -fsanitize=address,undefined
+    -fsanitize=address,undefined
     >
     $<$<CONFIG:Release>:
-        -flto
+    -flto
     >
 )

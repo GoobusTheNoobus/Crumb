@@ -22,22 +22,42 @@
 
 #pragma once
 #include "core.hpp"
+#include <bit>
 
 namespace crumb::bitboard {
 
 // returns a bitboard with the set bit being the square
-inline constexpr u64 mask(Square square) {
+constexpr u64 mask(Square square) {
     return 1ULL << static_cast<i32>(square);
 }
 
 // modifies the bitboard in place to add a square
-inline void set_bit(u64* bb, Square square) {
+constexpr void set_bit(u64* bb, Square square) {
     *bb |= mask(square);
 }
 
 // modifies the bitboard in place to remove a square
-inline void remove_bit(u64* bb, Square square) {
+constexpr void remove_bit(u64* bb, Square square) {
     *bb &= ~mask(square);
+}
+
+// checks whether a bitboard has a certain square's bit set
+constexpr bool is_occupied(u64 bb, Square square) {
+    return bb & mask(square);
+}
+
+constexpr i32 lowest_bit(u64 bb) {
+    return std::countr_zero(bb);
+}
+
+constexpr i32 count_bits(u64 bb) {
+    return std::popcount(bb);
+}
+
+constexpr i32 pop_lsb(u64* bb) {
+    i32 lsb = lowest_bit(*bb);
+    *bb &= *bb - 1;
+    return lsb;
 }
 
 } // namespace crumb::bitboard
